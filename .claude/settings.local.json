@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const src = fs.readFileSync\\('C:/Users/cyfol/OneDrive/Bureau/worldcup2026/client/src/data/mockData.js', 'utf8'\\); const m = src.match\\(/Angleterre.*?flag: '\\([^']+\\)'/s\\); if\\(m\\) { const flag = m[1]; console.log\\('code points:', [...flag].map\\(c => 'U+' + c.codePointAt\\(0\\).toString\\(16\\).toUpperCase\\(\\).padStart\\(4,'0'\\)\\).join\\(' '\\)\\); }\")"
+    ]
+  }
+}
