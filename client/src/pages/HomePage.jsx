@@ -325,6 +325,11 @@ export default function HomePage() {
       {/* ── En-tête sticky ── */}
       <div className="sched-sticky-top" ref={stickyRef}>
 
+        {/* Logo mobile uniquement */}
+        <div className="sched-mobile-logo">
+          <img src="/logo.png" alt="Pronos du Peuple" className="sched-mobile-logo-img" />
+        </div>
+
         {/* Header compact */}
         <div className="sched-header">
           <button className="sched-greeting" onClick={() => setShowProfile(true)}>
