@@ -1,15 +1,53 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, getPhaseLabel, getPhaseBadgeColor, isKnockout } from '../data/mockData'
-import Flag from '../components/Flag'
+import { matches } from '../data/mockData'
+import { AvatarDisplay } from '../components/AvatarDisplay'
+import { resizeImageToBase64 } from '../utils/image'
+import ScheduleRow from '../components/ScheduleRow'
+
+const AVATARS = ['⚽', '🏆', '🦁', '🦅', '🐺', '🦊', '🐯', '🦋', '🌟', '🔥', '⚡', '🎯']
 
 const TOTAL = matches.length
 
-// Abrège un nom d'équipe en 3 lettres max
-function abbrev(name) {
-  const words = name.split(' ')
-  if (words.length === 1) return name.slice(0, 3).toUpperCase()
-  return words.map((w) => w[0]).join('').toUpperCase().slice(0, 3)
+// ─── Étapes de la compétition ─────────────────────────────────────────────────
+const COMP_STAGES = [
+  { key: 'group', short: 'Groupes' },
+  { key: 'r32',   short: '32e' },
+  { key: 'r16',   short: '16e' },
+  { key: 'qf',    short: 'Quarts' },
+  { key: 'sf',    short: 'Demies' },
+  { key: 'third', short: '3e pl.' },
+  { key: 'final', short: '🏆 Finale' },
+]
+
+function CompetitionStepper({ results }) {
+  const statuses = COMP_STAGES.map((s) => {
+    const stageMatches = matches.filter((m) => m.phase === s.key)
+    if (stageMatches.length === 0) return { ...s, st: 'upcoming' }
+    const played = stageMatches.filter((m) => results[m.id]).length
+    if (played === stageMatches.length) return { ...s, st: 'done' }
+    if (played > 0) return { ...s, st: 'current' }
+    return { ...s, st: 'upcoming' }
+  })
+
+  // Si aucune étape n'est partiellement jouée, marquer la première non-terminée comme "current"
+  if (!statuses.some((s) => s.st === 'current')) {
+    const idx = statuses.findIndex((s) => s.st === 'upcoming')
+    if (idx !== -1) statuses[idx] = { ...statuses[idx], st: 'current' }
+  }
+
+  return (
+    <div className="comp-frise">
+      {statuses.map((s, i) => (
+        <div key={s.key} className="comp-frise-item" style={{ zIndex: statuses.length - i }}>
+          <div className={`comp-frise-step comp-frise-step--${s.st}`}>
+            {s.st === 'done' && <span className="comp-frise-check">✓</span>}
+            <span className="comp-frise-label">{s.short}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // Groupe les matchs par date (string YYYY-MM-DD)
@@ -41,150 +79,9 @@ function isDateToday(dateStr) {
   return d.toDateString() === new Date().toDateString()
 }
 
-// ─── Barre de répartition des paris ─────────────────────────────────────────
-
-function BetBar({ match }) {
-  const { allBets } = useApp()
-  const knockout = isKnockout(match.phase)
-
-  let home = 0, draw = 0, away = 0
-  Object.values(allBets).forEach((pb) => {
-    const b = pb[match.id]
-    if (b === 'home') home++
-    else if (b === 'draw' && !knockout) draw++
-    else if (b === 'away') away++
-  })
-
-  const total = home + draw + away
-  if (total === 0) return null
-
-  const pHome = Math.round((home / total) * 100)
-  const pDraw = knockout ? 0 : Math.round((draw / total) * 100)
-  const pAway = 100 - pHome - pDraw
-
-  return (
-    <div className="bet-bar">
-      <div className="bet-bar-labels">
-        <span className="bet-bar-side bet-bar-side--home">
-          <Flag flag={match.homeTeam.flag} size={12} />
-          {abbrev(match.homeTeam.name)} <strong>{pHome}%</strong>
-        </span>
-        {!knockout && pDraw > 0 && (
-          <span className="bet-bar-side bet-bar-side--draw">Nul {pDraw}%</span>
-        )}
-        <span className="bet-bar-side bet-bar-side--away">
-          <strong>{pAway}%</strong> {abbrev(match.awayTeam.name)}
-          <Flag flag={match.awayTeam.flag} size={12} />
-        </span>
-      </div>
-      <div className="bet-bar-track">
-        {pHome > 0 && <div className="bet-bar-fill bet-bar-fill--home" style={{ width: `${pHome}%` }} />}
-        {pDraw > 0 && <div className="bet-bar-fill bet-bar-fill--draw" style={{ width: `${pDraw}%` }} />}
-        {pAway > 0 && <div className="bet-bar-fill bet-bar-fill--away" style={{ width: `${pAway}%` }} />}
-      </div>
-    </div>
-  )
-}
-
-// ─── Ligne de match style lolesports ────────────────────────────────────────
-
-function ScheduleRow({ match }) {
-  const { results, myBets, placeBet, isMatchLocked } = useApp()
-
-  const result = results[match.id]
-  const bet = myBets[match.id]
-  const finished = !!result
-  const locked = !finished && isMatchLocked(match)
-  const knockout = isKnockout(match.phase)
-  const badgeColor = getPhaseBadgeColor(match.phase)
-
-  const phaseLabel =
-    match.phase === 'group'
-      ? `Groupe ${match.group} · J${match.matchday}`
-      : getPhaseLabel(match.phase)
-
-  let rowClass = 'sched-row'
-  if (finished && bet) rowClass += bet === result.winner ? ' sched-row--correct' : ' sched-row--wrong'
-  else if (bet && !locked) rowClass += ' sched-row--bet'
-  else if (locked) rowClass += ' sched-row--locked'
-
-  function getBtnState(outcome) {
-    if (bet === outcome) return 'selected'
-    return ''
-  }
-
-  return (
-    <div className={rowClass}>
-      <div className="sched-time-badge">{match.time}</div>
-
-      <div className="sched-main">
-        <div className="sched-teams">
-          <span className="sched-name">{abbrev(match.homeTeam.name)}</span>
-          <Flag flag={match.homeTeam.flag} size={40} />
-
-          {finished ? (
-            <span className="sched-score">{result.homeScore} – {result.awayScore}</span>
-          ) : (
-            <span className="sched-sep">/</span>
-          )}
-
-          <Flag flag={match.awayTeam.flag} size={40} />
-          <span className="sched-name">{abbrev(match.awayTeam.name)}</span>
-        </div>
-
-        <div className="sched-right">
-          {finished && bet && (
-            <span className={`sched-result-icon ${bet === result.winner ? 'correct' : 'wrong'}`}>
-              {bet === result.winner ? '✓' : '✗'}
-            </span>
-          )}
-          {locked && (
-            <span className="sched-locked-badge">En cours</span>
-          )}
-        </div>
-      </div>
-
-      <div className="sched-footer">
-        <span className="sched-phase-badge" style={{ color: badgeColor }}>
-          {phaseLabel}
-        </span>
-        <span className="sched-venue">{match.venue.split(',')[0]}</span>
-      </div>
-
-      <BetBar match={match} />
-
-      {/* Boutons de pari — visibles uniquement si le match n'a pas commencé */}
-      {!finished && !locked && (
-        <div className="sched-bet-row">
-          <button
-            className={`sched-bet-btn ${getBtnState('home')}`}
-            onClick={() => placeBet(match.id, 'home')}
-          >
-            <Flag flag={match.homeTeam.flag} size={28} /> {abbrev(match.homeTeam.name)}
-          </button>
-          {!knockout && (
-            <button
-              className={`sched-bet-btn ${getBtnState('draw')}`}
-              onClick={() => placeBet(match.id, 'draw')}
-            >
-              Nul
-            </button>
-          )}
-          <button
-            className={`sched-bet-btn ${getBtnState('away')}`}
-            onClick={() => placeBet(match.id, 'away')}
-          >
-            <Flag flag={match.awayTeam.flag} size={28} /> {abbrev(match.awayTeam.name)}
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Section de date ─────────────────────────────────────────────────────────
 
-function DateSection({ dateStr, dayMatches }) {
+function DateSection({ dateStr, dayMatches, nextMatchId }) {
   const today = isDateToday(dateStr)
   const header = formatDateHeader(dateStr)
 
@@ -197,13 +94,186 @@ function DateSection({ dateStr, dayMatches }) {
       {dayMatches.length === 0 ? (
         <div className="sched-empty">
           <strong>Aucun match prévu aujourd'hui</strong>
-          <span>Revenez plus tard</span>
+          <span>on s'emmerde</span>
         </div>
       ) : (
         <div className="sched-day">
-          {dayMatches.map((m) => <ScheduleRow key={m.id} match={m} />)}
+          {dayMatches.map((m, i) => (
+            <div key={m.id}>
+              <NextMatchCountdown targetMatchId={m.id} />
+              <ScheduleRow match={m} entryDelay={i * 0.07} />
+            </div>
+          ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Modal édition profil ─────────────────────────────────────────────────────
+
+function ProfileEditModal({ onClose }) {
+  const { player, updateProfile } = useApp()
+  const [avatar, setAvatar] = useState(player?.avatar || AVATARS[0])
+  const [name, setName] = useState(player?.name || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const fileRef = useRef(null)
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const base64 = await resizeImageToBase64(file)
+      setAvatar(base64)
+    } catch {
+      setError("Impossible de charger l'image.")
+    }
+  }
+
+  async function handleSave() {
+    const trimmed = name.trim()
+    if (trimmed.length < 2) { setError('Le pseudo doit faire au moins 2 caractères.'); return }
+    if (trimmed.length > 20) { setError('Le pseudo doit faire au maximum 20 caractères.'); return }
+    setSaving(true)
+    setError('')
+    try {
+      await updateProfile({ name: trimmed, avatar })
+      onClose()
+    } catch {
+      setError('Erreur lors de la sauvegarde.')
+      setSaving(false)
+    }
+  }
+
+  // Fermer sur Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const isImage = avatar?.startsWith('data:')
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Mon profil</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Avatar preview */}
+        <div className="profile-avatar-preview">
+          <div className="profile-avatar-big">
+            <AvatarDisplay avatar={avatar} size={72} />
+          </div>
+        </div>
+
+        {/* Upload photo */}
+        <div className="profile-section">
+          <label className="form-label">Avatar</label>
+          <button type="button" className="btn-upload" onClick={() => fileRef.current?.click()}>
+            📷 Importer une photo
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleImageUpload} />
+
+          <div className={`avatar-grid avatar-grid--compact ${isImage ? 'avatar-grid--dimmed' : ''}`}>
+            {AVATARS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                className={`avatar-btn ${avatar === a ? 'selected' : ''}`}
+                onClick={() => setAvatar(a)}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pseudo */}
+        <div className="profile-section">
+          <label className="form-label">Pseudo</label>
+          <input
+            className="form-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={20}
+            autoComplete="off"
+          />
+        </div>
+
+        {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
+
+        <div className="modal-actions">
+          <button className="btn-secondary" onClick={onClose}>Annuler</button>
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Sauvegarde...' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Décompte prochain match ─────────────────────────────────────────────────
+
+function formatCountdown(diffMs) {
+  if (diffMs <= 0) return null
+  const totalSec = Math.floor(diffMs / 1000)
+  const totalMin = Math.floor(totalSec / 60)
+  const totalH   = Math.floor(totalSec / 3600)
+  const d = Math.floor(totalH / 24)
+  const h = totalH % 24
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+
+  // > 24h → jours + heures
+  if (totalH >= 24) return `${d}j ${h}h`
+  // > 1h → heures + minutes
+  if (totalH >= 1)  return `${totalH}h ${String(m).padStart(2, '0')}m`
+  // > 1min → minutes + secondes
+  if (totalMin >= 1) return `${totalMin}m ${String(s).padStart(2, '0')}s`
+  return `${s}s`
+}
+
+// Renvoie l'ID du prochain match non commencé
+function useNextMatchId() {
+  const { isMatchLocked } = useApp()
+  return useMemo(() => {
+    return matches
+      .filter((m) => m.date && m.time && !isMatchLocked(m))
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]?.id ?? null
+  }, [isMatchLocked])
+}
+
+// Bandeau décompte — ne s'affiche que si targetMatchId est le prochain match
+function NextMatchCountdown({ targetMatchId }) {
+  const nextMatchId = useNextMatchId()
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  if (!nextMatchId || nextMatchId !== targetMatchId) return null
+
+  const nextMatch = matches.find((m) => m.id === nextMatchId)
+  if (!nextMatch) return null
+
+  const matchTs = new Date(`${nextMatch.date}T${nextMatch.time}:00+02:00`).getTime()
+  const diff = matchTs - now
+  const label = formatCountdown(diff)
+  if (!label) return null
+
+  const isHot = diff < 3 * 3600 * 1000
+
+  return (
+    <div className={`sched-countdown sched-countdown--inline${isHot ? ' sched-countdown--hot' : ''}`}>
+      <span className="sched-countdown-next">⏱ PROCHAIN MATCH</span>
+      <span className="sched-countdown-time">{label}</span>
     </div>
   )
 }
@@ -213,6 +283,7 @@ function DateSection({ dateStr, dayMatches }) {
 export default function HomePage() {
   const { player, myPoints, myBetsCount, playedCount, scoreboard, results } = useApp()
   const [filter, setFilter] = useState('all')
+  const [showProfile, setShowProfile] = useState(false)
   const todayRef = useRef(null)
 
   const rank = useMemo(() => {
@@ -220,8 +291,6 @@ export default function HomePage() {
     const idx = board.findIndex((p) => p.pseudoId === player?.pseudoId)
     return idx === -1 ? '—' : idx + 1
   }, [scoreboard, player])
-
-  const progress = TOTAL > 0 ? Math.round((playedCount / TOTAL) * 100) : 0
 
   const filteredMatches = useMemo(() => {
     if (filter === 'upcoming') return matches.filter((m) => !results[m.id])
@@ -251,19 +320,22 @@ export default function HomePage() {
 
   return (
     <div className="page sched-page">
+      {showProfile && <ProfileEditModal onClose={() => setShowProfile(false)} />}
 
       {/* ── En-tête sticky ── */}
       <div className="sched-sticky-top" ref={stickyRef}>
 
         {/* Header compact */}
         <div className="sched-header">
-          <div className="sched-greeting">
-            <span className="sched-avatar">{player?.avatar}</span>
+          <button className="sched-greeting" onClick={() => setShowProfile(true)}>
+            <span className="sched-avatar">
+              <AvatarDisplay avatar={player?.avatar} size={38} />
+            </span>
             <div>
               <div className="sched-greeting-name">{player?.name}</div>
-              <div className="sched-greeting-sub">Coupe du Monde 2026</div>
+              <div className="sched-greeting-sub">Modifier le profil</div>
             </div>
-          </div>
+          </button>
 
           <div className="sched-stats">
             <div className="sched-stat">
@@ -272,8 +344,13 @@ export default function HomePage() {
             </div>
             <div className="sched-stat-div" />
             <div className="sched-stat">
-              <span className="sched-stat-val">{myBetsCount}</span>
-              <span className="sched-stat-lbl">paris</span>
+              <span className="sched-stat-val sched-stat-val--correct">{myPoints.correct}</span>
+              <span className="sched-stat-lbl">gagnés</span>
+            </div>
+            <div className="sched-stat-div" />
+            <div className="sched-stat">
+              <span className="sched-stat-val sched-stat-val--wrong">{myPoints.wrong}</span>
+              <span className="sched-stat-lbl">perdus</span>
             </div>
             <div className="sched-stat-div" />
             <div className="sched-stat">
@@ -283,18 +360,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="sched-progress">
-          <div className="sched-progress-bar">
-            <div className="sched-progress-fill" style={{ width: `${progress}%` }}>
-              <div className="sched-progress-spark" />
-            </div>
-          </div>
-          <div className="sched-progress-label">
-            <span>{playedCount} matchs joués</span>
-            <span>{TOTAL - playedCount} restants</span>
-          </div>
-        </div>
+        {/* Fil d'ariane de la compétition */}
+        <CompetitionStepper results={results} />
 
         {/* Filtres */}
         <div className="sched-filters">

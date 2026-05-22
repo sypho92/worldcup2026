@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview Styles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { display: flex; min-height: 100vh; }
+
+    /* ══════════════════════════════════════════
+       DEEP SPACE — gauche
+    ══════════════════════════════════════════ */
+    .panel {
+      flex: 1;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-ds {
+      background: radial-gradient(ellipse at 60% 0%, #1a0f3c 0%, #0f0c29 40%, #06060f 100%);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .panel-bb {
+      background: #000000;
+      font-family: 'Space Grotesk', sans-serif;
+      border-left: 1px solid #111;
+    }
+
+    /* Labels */
+    .style-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .panel-ds .style-label { color: rgba(0, 212, 255, 0.6); }
+    .panel-bb .style-label { color: rgba(255, 77, 0, 0.6); }
+
+    .style-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+    .panel-ds .style-title { color: #ffffff; }
+    .panel-bb .style-title { color: #ffffff; }
+
+    /* ── DEEP SPACE CARDS ── */
+    .ds-card {
+      background: rgba(255, 255, 255, 0.045);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 16px;
+      padding: 0 0 16px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .ds-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(0, 212, 255, 0.25);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.08);
+    }
+
+    .ds-time {
+      text-align: center;
+      font-size: 34px;
+      font-weight: 800;
+      color: #00d4ff;
+      padding: 16px 0 10px;
+      letter-spacing: 1px;
+    }
+
+    .ds-teams {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 0 20px 14px;
+    }
+    .ds-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .ds-sep {
+      font-size: 22px;
+      color: rgba(255,255,255,0.2);
+    }
+    .ds-score {
+      font-size: 30px;
+      font-weight: 800;
+      color: #00d4ff;
+      letter-spacing: 2px;
+    }
+    .ds-flag { font-size: 28px; }
+
+    .ds-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ds-phase {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #00d4ff;
+    }
+    .ds-venue {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .ds-bar-row {
+      display: flex;
+      gap: 8px;
+      padding: 14px 16px 0;
+    }
+    .ds-bar-row span {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+    }
+    .ds-bar-track {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-self: center;
+    }
+    .ds-bar-fill-home { height: 100%; background: #ef4444; width: 65%; }
+    .ds-bar-fill-away { height: 100%; background: #00d4ff; flex: 1; }
+
+    .ds-bets {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 0;
+    }
+    .ds-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.6);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .ds-btn.selected {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.4);
+      color: #00d4ff;
+    }
+    .ds-btn:hover { border-color: rgba(0,212,255,0.2); color: rgba(255,255,255,0.9); }
+
+    .ds-card-correct { border-left: 3px solid #22c55e; }
+    .ds-card-wrong { border-left: 3px solid #ef4444; }
+
+    /* ── BOLD & BRUTAL CARDS ── */
+    .bb-card {
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      border-radius: 4px;
+      padding: 0 0 16px;
+      overflow: hidden;
+      transition: all 0.15s;
+    }
+    .bb-card:hover {
+      border-color: #ff4d00;
+      box-shadow: 4px 0 0 0 #ff4d00 inset;
+    }
+
+    .bb-time {
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 40px;
+      font-weight: 900;
+      color: #ff4d00;
+      padding: 14px 0 8px;
+      letter-spacing: 2px;
+    }
+
+    .bb-teams {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 20px 12px;
+    }
+    .bb-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+    .bb-sep {
+      font-size: 20px;
+      color: #333;
+      font-weight: 700;
+    }
+    .bb-score {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #ff4d00;
+      letter-spacing: -1px;
+    }
+    .bb-flag { font-size: 26px; }
+
+    .bb-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px 0;
+      border-top: 1px solid #161616;
+    }
+    .bb-phase {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: #ff4d00;
+    }
+    .bb-venue {
+      font-size: 10px;
+      color: #444;
+      letter-spacing: 0.5px;
+    }
+
+    .bb-bar-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 0;
+      align-items: center;
+    }
+    .bb-bar-row span {
+      font-size: 11px;
+      font-weight: 700;
+      color: #444;
+      letter-spacing: 0.5px;
+    }
+    .bb-bar-track {
+      flex: 1;
+      height: 3px;
+      background: #1a1a1a;
+      display: flex;
+    }
+    .bb-bar-fill-home { height: 100%; background: #ef4444; width: 65%; }
+    .bb-bar-fill-away { height: 100%; background: #ff4d00; flex: 1; }
+
+    .bb-bets {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px 0;
+    }
+    .bb-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 2px;
+      border: 1px solid #1e1e1e;
+      background: #111;
+      color: #555;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .bb-btn.selected {
+      background: #ff4d00;
+      border-color: #ff4d00;
+      color: #000;
+    }
+    .bb-btn:hover { border-color: #ff4d00; color: #ff4d00; }
+
+    .bb-card-correct { border-left: 3px solid #22c55e; }
+    .bb-card-wrong { border-left: 3px solid #ef4444; opacity: 0.6; }
+
+    /* ── Header panels ── */
+    .ds-header, .bb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 20px;
+      border-bottom: 1px solid;
+      margin-bottom: 8px;
+    }
+    .ds-header { border-color: rgba(255,255,255,0.06); }
+    .bb-header { border-color: #111; }
+
+    .ds-player { display: flex; align-items: center; gap: 10px; }
+    .ds-player-name { font-size: 18px; font-weight: 800; color: #fff; }
+    .ds-player-sub { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; }
+
+    .bb-player { display: flex; align-items: center; gap: 10px; }
+    .bb-player-name { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .bb-player-sub { font-size: 10px; color: #444; letter-spacing: 2px; text-transform: uppercase; }
+
+    .ds-stats, .bb-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 8px;
+      padding: 8px 14px;
+    }
+    .ds-stats { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); }
+    .bb-stats { background: #0d0d0d; border: 1px solid #1a1a1a; }
+
+    .stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .ds-stat-val { font-size: 20px; font-weight: 800; color: #00d4ff; line-height: 1; }
+    .ds-stat-lbl { font-size: 8px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1px; }
+    .bb-stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 800; color: #ff4d00; line-height: 1; }
+    .bb-stat-lbl { font-size: 8px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-div-ds { width: 1px; height: 24px; background: rgba(255,255,255,0.07); }
+    .stat-div-bb { width: 1px; height: 24px; background: #1a1a1a; }
+
+    .ds-date-header {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 3px; color: rgba(0,212,255,0.5); padding: 16px 0 8px;
+    }
+    .bb-date-header {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 3px; color: #333; padding: 16px 0 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ DEEP SPACE ══ -->
+  <div class="panel panel-ds">
+    <div>
+      <div class="style-label">Option A</div>
+      <div class="style-title">🌌 Deep Space Gradient</div>
+    </div>
+
+    <div class="ds-header">
+      <div class="ds-player">
+        <span style="font-size:30px">🦁</span>
+        <div>
+          <div class="ds-player-name">Cyril</div>
+          <div class="ds-player-sub">Coupe du Monde 2026</div>
+        </div>
+      </div>
+      <div class="ds-stats">
+        <div class="stat"><span class="ds-stat-val">14</span><span class="ds-stat-lbl">pts</span></div>
+        <div class="stat-div-ds"></div>
+        <div class="stat"><span class="ds-stat-val">9</span><span class="ds-stat-lbl">paris</span></div>
+        <div class="stat-div-ds"></div>
+        <div class="stat"><span class="ds-stat-val">3</span><span class="ds-stat-lbl">rang</span></div>
+      </div>
+    </div>
+
+    <div class="ds-date-header">Aujourd'hui</div>
+
+    <!-- Card à venir -->
+    <div class="ds-card">
+      <div class="ds-time">20:00</div>
+      <div class="ds-teams">
+        <span class="ds-name">FRA</span>
+        <span class="ds-flag">🇫🇷</span>
+        <span class="ds-sep">/</span>
+        <span class="ds-flag">🇲🇦</span>
+        <span class="ds-name">MAR</span>
+      </div>
+      <div class="ds-footer">
+        <span class="ds-phase">Groupe B · J1</span>
+        <span class="ds-venue">NRG Stadium</span>
+      </div>
+      <div class="ds-bar-row">
+        <span>FRA <strong style="color:#ef4444">65%</strong></span>
+        <div class="ds-bar-track"><div class="ds-bar-fill-home"></div><div class="ds-bar-fill-away"></div></div>
+        <span><strong style="color:#00d4ff">35%</strong> MAR</span>
+      </div>
+      <div class="ds-bets">
+        <div class="ds-btn selected">🇫🇷 FRA</div>
+        <div class="ds-btn">Nul</div>
+        <div class="ds-btn">🇲🇦 MAR</div>
+      </div>
+    </div>
+
+    <!-- Card terminée correcte -->
+    <div class="ds-card ds-card-correct">
+      <div class="ds-time">17:00</div>
+      <div class="ds-teams">
+        <span class="ds-name">ARG</span>
+        <span class="ds-flag">🇦🇷</span>
+        <span class="ds-score">2 – 1</span>
+        <span class="ds-flag">🇨🇦</span>
+        <span class="ds-name">CAN</span>
+      </div>
+      <div class="ds-footer">
+        <span class="ds-phase" style="color:#22c55e">✓ Groupe C · J1</span>
+        <span class="ds-venue">Rose Bowl</span>
+      </div>
+    </div>
+
+    <!-- Card terminée mauvaise -->
+    <div class="ds-card ds-card-wrong" style="opacity:0.65">
+      <div class="ds-time">17:00</div>
+      <div class="ds-teams">
+        <span class="ds-name">ESP</span>
+        <span class="ds-flag">🇪🇸</span>
+        <span class="ds-score">0 – 1</span>
+        <span class="ds-flag">🇩🇪</span>
+        <span class="ds-name">ALL</span>
+      </div>
+      <div class="ds-footer">
+        <span class="ds-phase" style="color:#ef4444">✗ Groupe E · J1</span>
+        <span class="ds-venue">Levi's Stadium</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOLD & BRUTAL ══ -->
+  <div class="panel panel-bb">
+    <div>
+      <div class="style-label">Option B</div>
+      <div class="style-title" style="letter-spacing:-1px">🔥 Bold &amp; Brutal</div>
+    </div>
+
+    <div class="bb-header">
+      <div class="bb-player">
+        <span style="font-size:30px">🦁</span>
+        <div>
+          <div class="bb-player-name">Cyril</div>
+          <div class="bb-player-sub">Coupe du Monde 2026</div>
+        </div>
+      </div>
+      <div class="bb-stats">
+        <div class="stat"><span class="bb-stat-val">14</span><span class="bb-stat-lbl">pts</span></div>
+        <div class="stat-div-bb"></div>
+        <div class="stat"><span class="bb-stat-val">9</span><span class="bb-stat-lbl">paris</span></div>
+        <div class="stat-div-bb"></div>
+        <div class="stat"><span class="bb-stat-val">3</span><span class="bb-stat-lbl">rang</span></div>
+      </div>
+    </div>
+
+    <div class="bb-date-header">Aujourd'hui</div>
+
+    <!-- Card à venir -->
+    <div class="bb-card">
+      <div class="bb-time">20:00</div>
+      <div class="bb-teams">
+        <span class="bb-name">FRA</span>
+        <span class="bb-flag">🇫🇷</span>
+        <span class="bb-sep">VS</span>
+        <span class="bb-flag">🇲🇦</span>
+        <span class="bb-name">MAR</span>
+      </div>
+      <div class="bb-footer">
+        <span class="bb-phase">Groupe B · J1</span>
+        <span class="bb-venue">NRG Stadium</span>
+      </div>
+      <div class="bb-bar-row">
+        <span>FRA <strong style="color:#ef4444">65%</strong></span>
+        <div class="bb-bar-track"><div class="bb-bar-fill-home"></div><div class="bb-bar-fill-away"></div></div>
+        <span><strong style="color:#ff4d00">35%</strong> MAR</span>
+      </div>
+      <div class="bb-bets">
+        <div class="bb-btn selected">🇫🇷 FRA</div>
+        <div class="bb-btn">NUL</div>
+        <div class="bb-btn">🇲🇦 MAR</div>
+      </div>
+    </div>
+
+    <!-- Card terminée correcte -->
+    <div class="bb-card bb-card-correct">
+      <div class="bb-time">17:00</div>
+      <div class="bb-teams">
+        <span class="bb-name">ARG</span>
+        <span class="bb-flag">🇦🇷</span>
+        <span class="bb-score">2 – 1</span>
+        <span class="bb-flag">🇨🇦</span>
+        <span class="bb-name">CAN</span>
+      </div>
+      <div class="bb-footer">
+        <span class="bb-phase" style="color:#22c55e">✓ Groupe C · J1</span>
+        <span class="bb-venue">Rose Bowl</span>
+      </div>
+    </div>
+
+    <!-- Card terminée mauvaise -->
+    <div class="bb-card bb-card-wrong">
+      <div class="bb-time">17:00</div>
+      <div class="bb-teams">
+        <span class="bb-name">ESP</span>
+        <span class="bb-flag">🇪🇸</span>
+        <span class="bb-score">0 – 1</span>
+        <span class="bb-flag">🇩🇪</span>
+        <span class="bb-name">ALL</span>
+      </div>
+      <div class="bb-footer">
+        <span class="bb-phase" style="color:#ef4444">✗ Groupe E · J1</span>
+        <span class="bb-venue">Levi's Stadium</span>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, getPhaseLabel, getPointsForPhase } from '../data/mockData'
-import BetButtons from '../components/BetButtons'
-import MatchCard from '../components/MatchCard'
+import { matches, getPointsForPhase } from '../data/mockData'
+import ScheduleRow from '../components/ScheduleRow'
 
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
@@ -22,11 +21,11 @@ function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
   const pts = getPointsForPhase(phaseKey)
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div className="collapsible-header" onClick={() => setOpen((o) => !o)}>
+    <div style={{ marginBottom: 8 }}>
+      <div className="mybets-phase-header" onClick={() => setOpen((o) => !o)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h3>{phaseLabel}</h3>
-          <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>+{pts}pt{pts > 1 ? 's' : ''}</span>
+          <h3 className="mybets-phase-label">{phaseLabel}</h3>
+          <span className="mybets-phase-pts">+{pts}pt{pts > 1 ? 's' : ''}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="collapsible-count">{betCount}/{phaseMatches.length}</span>
@@ -35,9 +34,9 @@ function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
       </div>
 
       {open && (
-        <div className="match-list">
-          {phaseMatches.map((m) => (
-            <MatchCard key={m.id} match={m} showBets />
+        <div className="sched-day">
+          {phaseMatches.map((m, i) => (
+            <ScheduleRow key={m.id} match={m} entryDelay={Math.min(i, 5) * 0.06} />
           ))}
         </div>
       )}
@@ -59,12 +58,10 @@ export default function MyBetsPage() {
   }, [])
 
   return (
-    <div className="page">
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div className="page sched-page">
+      <div className="mybets-top">
         <h1 className="page-title" style={{ margin: 0 }}>Mes paris</h1>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
-          {totalBets}/{matches.length}
-        </span>
+        <span className="mybets-total">{totalBets}/{matches.length}</span>
       </div>
 
       {PHASES.map((p) =>

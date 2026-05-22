@@ -17,6 +17,15 @@ function flagToCode(emoji) {
 }
 
 export default function Flag({ flag, size = 20 }) {
+  if (flag?.startsWith('http') || flag?.startsWith('/')) {
+    return (
+      <img
+        src={flag}
+        alt=""
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, display: 'inline-block' }}
+      />
+    )
+  }
   const code = flagToCode(flag)
   if (code) {
     return (

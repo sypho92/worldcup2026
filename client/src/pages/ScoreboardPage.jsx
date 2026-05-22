@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext'
 import { matches, GROUPS_DATA } from '../data/mockData'
 import { computeAllGroupStandings } from '../utils/standings'
 import Flag from '../components/Flag'
+import { AvatarDisplay } from '../components/AvatarDisplay'
+import PlayerProfileModal from '../components/PlayerProfileModal'
 
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
@@ -28,8 +30,7 @@ function PerPhaseAccordion({ pseudoId }) {
         const r = results[m.id]
         const b = playerBets[m.id]
         if (r && b) {
-          const phasePts = { group: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }[p.key] || 1
-          if (b === r.winner) { pts += phasePts; correct++ }
+          if (b === r.winner) { pts += 1; correct++ }
         }
       })
       const played = phaseMatches.filter((m) => results[m.id]).length
@@ -123,12 +124,20 @@ function GroupTable({ groupId, teams, groupMatches, results }) {
 export default function ScoreboardPage() {
   const { player, scoreboard, results } = useApp()
   const [showGroups, setShowGroups] = useState(false)
+  const [viewedPlayerId, setViewedPlayerId] = useState(null)
 
   const board = useMemo(() => scoreboard(), [scoreboard])
 
   return (
     <div className="page">
       <h1 className="page-title">Classement</h1>
+
+      {viewedPlayerId && (
+        <PlayerProfileModal
+          playerId={viewedPlayerId}
+          onClose={() => setViewedPlayerId(null)}
+        />
+      )}
 
       {/* Player scoreboard */}
       <div className="scoreboard-list mb-24">
@@ -139,11 +148,16 @@ export default function ScoreboardPage() {
           </div>
         ) : (
           board.map((p, i) => (
-            <div key={p.pseudoId} className={`scoreboard-row ${p.pseudoId === player?.pseudoId ? 'mine' : ''}`}>
+            <div
+              key={p.pseudoId}
+              className={`scoreboard-row ${p.pseudoId === player?.pseudoId ? 'mine' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setViewedPlayerId(p.pseudoId)}
+            >
               <span className={`rank ${i < 3 ? 'top' : ''}`}>
                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
               </span>
-              <span style={{ fontSize: 24 }}>{p.avatar}</span>
+              <AvatarDisplay avatar={p.avatar} size={32} />
               <div className="player-info">
                 <div className="name">{p.name}</div>
                 <div className="sub">{p.correctBets} bon{p.correctBets !== 1 ? 's' : ''} pronostic{p.correctBets !== 1 ? 's' : ''}</div>

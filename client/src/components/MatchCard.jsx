@@ -18,6 +18,8 @@ export default function MatchCard({ match, showBets = true, showVenue = false })
   let cardClass = 'match-card'
   if (finished && bet) {
     cardClass += bet === result.winner ? ' correct-border' : ' wrong-border'
+  } else if (!finished && bet) {
+    cardClass += ' bet-placed'
   }
 
   const badgeColor = getPhaseBadgeColor(match.phase)
@@ -35,7 +37,7 @@ export default function MatchCard({ match, showBets = true, showVenue = false })
           >
             {phaseLabel}
           </span>
-          <span>{formatDate(match.date)} · {match.time}</span>
+          <span className="match-meta-date">{formatDate(match.date)} · {match.time}</span>
         </div>
         {finished && bet && (
           <span style={{ fontSize: 13, color: bet === result.winner ? 'var(--success)' : 'var(--error)' }}>

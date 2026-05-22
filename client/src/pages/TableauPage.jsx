@@ -43,24 +43,24 @@ function GroupCard({ groupId, group, selected, onClick }) {
 
   return (
     <div
-      className={`group-card${selected ? ' selected' : ''}`}
+      className="group-card"
       onClick={onClick}
       style={{
-        borderColor: selected ? color : undefined,
-        background: selected ? color + '18' : undefined,
+        borderColor: selected ? color : color + '70',
+        background: selected ? color + '22' : color + '0e',
       }}
     >
       <div
         className="group-card-header"
-        style={{ color, borderBottom: `2px solid ${color}33`, paddingBottom: 6, marginBottom: 6 }}
+        style={{ borderBottom: `1px solid ${color}33` }}
       >
-        <span className="group-card-letter">Groupe {groupId}</span>
-        <span className="group-card-stats">{betCount}/6 · {played} joués</span>
+        <span className="group-card-letter" style={{ color }}>Groupe {groupId}</span>
+        <span className="group-card-stats">{betCount}/6 paris · {played} joués</span>
       </div>
       <div className="group-card-teams">
         {group.teams.map((t) => (
           <div key={t.name} className="group-card-team">
-            <Flag flag={t.flag} size={16} />
+            <Flag flag={t.flag} size={24} />
             <span>{t.name}</span>
           </div>
         ))}
@@ -168,10 +168,9 @@ function GroupsTab() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ONGLET PHASES ÉLIMINATOIRES — BRACKET
+// ONGLET ÉLIMINATOIRES — BRACKET
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Structure du bracket : left half (from Final outward) and right half
 const LEFT = {
   r32: [['m073', 'm074'], ['m075', 'm076'], ['m077', 'm078'], ['m079', 'm080']],
   r16: ['m089', 'm090', 'm091', 'm092'],
@@ -219,7 +218,6 @@ function BracketSlot({ matchId, isFinal }) {
   )
 }
 
-// Colonne R32 : paires de matchs
 function ColR32({ pairs }) {
   return (
     <div className="b-col b-col--r32">
@@ -234,9 +232,7 @@ function ColR32({ pairs }) {
   )
 }
 
-// Colonne single (R16, QF)
 function ColSingle({ ids, nSlots }) {
-  // nSlots hints the total number of visual slots to align with (for spacing)
   return (
     <div className="b-col b-col--single" style={{ '--n': nSlots }}>
       {ids.map((id) => (
@@ -248,8 +244,7 @@ function ColSingle({ ids, nSlots }) {
   )
 }
 
-// Colonne SF (1 slot) avec label
-function ColSF({ matchId, label }) {
+function ColSF({ matchId }) {
   return (
     <div className="b-col b-col--sf">
       <BracketSlot matchId={matchId} />
@@ -322,12 +317,12 @@ function BracketView() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const KNOCKOUT_ROUNDS = [
-  { key: 'r32', label: '32e', pts: 2 },
-  { key: 'r16', label: '16e', pts: 3 },
-  { key: 'qf', label: 'Quarts', pts: 4 },
-  { key: 'sf', label: 'Demies', pts: 5 },
-  { key: 'third', label: '3e place', pts: 3 },
-  { key: 'final', label: 'Finale', pts: 6 },
+  { key: 'r32', label: '32e', pts: 1 },
+  { key: 'r16', label: '16e', pts: 1 },
+  { key: 'qf', label: 'Quarts', pts: 1 },
+  { key: 'sf', label: 'Demies', pts: 1 },
+  { key: 'third', label: '3e place', pts: 1 },
+  { key: 'final', label: 'Finale', pts: 1 },
 ]
 
 function KnockoutTab() {

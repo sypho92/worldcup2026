@@ -265,7 +265,7 @@ const thirdMatch = makeKnockoutMatch('third', 'Perdant SF 1', 'Perdant SF 2', '�
 const finalMatch = makeKnockoutMatch('final', 'Vainqueur SF 1', 'Vainqueur SF 2', '🏆', '🏆', '2026-07-22', '20:00')
 
 const demoMatch = {
-  id: 'm000',
+  id: 'demo_0',
   phase: 'demo',
   homeTeam: { name: 'France', flag: '🇫🇷' },
   awayTeam: { name: 'Brésil', flag: '🇧🇷' },
@@ -274,21 +274,51 @@ const demoMatch = {
   venue: 'MetLife Stadium, New York/NJ',
 }
 
+const demoWin = {
+  id: 'demo_1',
+  phase: 'demo',
+  homeTeam: { name: 'Argentine', flag: '🇦🇷' },
+  awayTeam: { name: 'Allemagne', flag: '🇩🇪' },
+  date: '2026-05-17',
+  time: '18:00',
+  venue: 'Rose Bowl, Los Angeles',
+}
+
+const demoLoss = {
+  id: 'demo_2',
+  phase: 'demo',
+  homeTeam: { name: 'Espagne', flag: '🇪🇸' },
+  awayTeam: { name: 'Portugal', flag: '🇵🇹' },
+  date: '2026-05-18',
+  time: '20:00',
+  venue: 'SoFi Stadium, Los Angeles',
+}
+
 const clFinalMatch = {
   id: 'mcl',
   phase: 'cl_final',
-  homeTeam: { name: 'PSG', flag: '🇫🇷' },
-  awayTeam: { name: 'Arsenal', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  homeTeam: { name: 'PSG', flag: 'https://crests.football-data.org/524.svg' },
+  awayTeam: { name: 'Arsenal', flag: 'https://crests.football-data.org/57.svg' },
   date: '2026-05-30',
   time: '18:00',
   venue: 'Allianz Arena, Munich',
 }
 
 export const DEMO_RESULTS = {
-  'm000': { homeScore: 2, awayScore: 1, winner: 'home' },
+  'demo_0': { homeScore: 2, awayScore: 1, winner: 'home' },
+  'demo_1': { homeScore: 3, awayScore: 1, winner: 'home' },
+  'demo_2': { homeScore: 0, awayScore: 2, winner: 'away' },
+}
+
+// Bets démo : demo_1 → bon prono (home), demo_2 → mauvais prono (home)
+export const DEMO_BETS = {
+  'demo_1': 'home',
+  'demo_2': 'home',
 }
 
 export const matches = [
+  demoWin,
+  demoLoss,
   demoMatch,
   clFinalMatch,
   ...groupMatches,
@@ -333,16 +363,7 @@ export function getPhaseBadgeColor(phase) {
 }
 
 export function getPointsForPhase(phase) {
-  const pts = {
-    group: 1,
-    r32: 2,
-    r16: 3,
-    qf: 4,
-    sf: 5,
-    third: 3,
-    final: 6,
-  }
-  return pts[phase] || 1
+  return 1
 }
 
 export function isKnockout(phase) {

@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { AvatarDisplay } from './AvatarDisplay'
 
 const NAV_ITEMS = [
   {
@@ -48,6 +50,19 @@ const NAV_ITEMS = [
     ),
   },
   {
+    path: '/challenges',
+    label: 'Défis',
+    hasBadge: true,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 19l6-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 21l2.5-2.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 3h4v4L10 18l-4-4L17 3z" />
+      </svg>
+    ),
+  },
+  {
     path: '/admin',
     label: 'Admin',
     sidebarOnly: true,
@@ -63,18 +78,37 @@ const NAV_ITEMS = [
 export default function Nav() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { player, logout } = useApp()
+  const { player, logout, challenges } = useApp()
 
   const isActive = (path) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
+
+  // Count pending challenges received by the current player
+  const pendingCount = useMemo(() => {
+    if (!player || !challenges) return 0
+    return Object.values(challenges).filter(
+      (c) => c.challengedId === player.pseudoId && c.status === 'pending'
+    ).length
+  }, [challenges, player])
 
   return (
     <>
       {/* Sidebar (desktop) */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <span className="logo-icon">⚽</span>
-          <span className="logo-text">World Cup<br />2026</span>
+          <div className="logo-emblem">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
+              <circle cx="16" cy="16" r="13.5" stroke="rgba(212,152,30,0.7)" strokeWidth="1.3" fill="rgba(212,152,30,0.08)"/>
+              <polygon points="16,7.5 19.8,10.8 18.3,15.2 13.7,15.2 12.2,10.8" fill="rgba(212,152,30,0.9)"/>
+              <polygon points="8.5,10.5 12.2,10.8 13.7,15.2 9.8,18 6.8,15.5" fill="rgba(212,152,30,0.35)" stroke="rgba(212,152,30,0.5)" strokeWidth="0.6"/>
+              <polygon points="23.5,10.5 19.8,10.8 18.3,15.2 22.2,18 25.2,15.5" fill="rgba(212,152,30,0.35)" stroke="rgba(212,152,30,0.5)" strokeWidth="0.6"/>
+              <polygon points="16,24.5 12.2,22 9.8,18 13.7,15.2 18.3,15.2 22.2,18 19.8,22" fill="rgba(212,152,30,0.25)" stroke="rgba(212,152,30,0.5)" strokeWidth="0.6"/>
+            </svg>
+          </div>
+          <div className="logo-text-block">
+            <span className="logo-title">WORLD CUP</span>
+            <span className="logo-year">2026</span>
+          </div>
         </div>
 
         <nav className="sidebar-nav">
@@ -86,13 +120,16 @@ export default function Nav() {
             >
               {item.icon}
               {item.label}
+              {item.hasBadge && pendingCount > 0 && (
+                <span className="nav-badge nav-badge--sidebar">{pendingCount}</span>
+              )}
             </button>
           ))}
         </nav>
 
         {player && (
           <div className="sidebar-player">
-            <span className="player-avatar">{player.avatar}</span>
+            <span className="player-avatar"><AvatarDisplay avatar={player.avatar} size={28} /></span>
             <span className="player-name">{player.name}</span>
             <button className="logout-btn" onClick={logout}>Quitter</button>
           </div>
@@ -107,7 +144,12 @@ export default function Nav() {
             className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
             onClick={() => navigate(item.path)}
           >
-            {item.icon}
+            <span className="nav-icon-wrap">
+              {item.icon}
+              {item.hasBadge && pendingCount > 0 && (
+                <span className="nav-badge">{pendingCount}</span>
+              )}
+            </span>
             <span className="nav-label">{item.label}</span>
           </button>
         ))}

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { matches, getPhaseLabel, getPhaseBadgeColor } from '../data/mockData'
 import Flag from '../components/Flag'
+import { AvatarDisplay } from '../components/AvatarDisplay'
 
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
@@ -12,6 +13,91 @@ const PHASES = [
   { key: 'third', label: '3e place' },
   { key: 'final', label: 'Finale' },
 ]
+
+/* ── Player manager (admin) ────────────────────────────────────────────────── */
+function PlayerManager() {
+  const { players, allBets, deletePlayer, player: me } = useApp()
+  const [confirming, setConfirming] = useState(null) // pseudoId being confirmed
+  const [deleting, setDeleting]     = useState(null)
+  const [deleted, setDeleted]       = useState([])   // keep track for instant UI feedback
+
+  const list = useMemo(() =>
+    Object.entries(players)
+      .filter(([id]) => !deleted.includes(id))
+      .map(([id, p]) => ({
+        pseudoId: id,
+        name: p.name,
+        avatar: p.avatar,
+        betsCount: Object.keys(allBets[id] || {}).length,
+        isMe: id === me?.pseudoId,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [players, allBets, deleted, me]
+  )
+
+  async function handleDelete(pseudoId) {
+    setDeleting(pseudoId)
+    try {
+      await deletePlayer(pseudoId)
+      setDeleted((d) => [...d, pseudoId])
+    } catch (e) {
+      alert('Erreur lors de la suppression.')
+    } finally {
+      setDeleting(null)
+      setConfirming(null)
+    }
+  }
+
+  return (
+    <div className="admin-players">
+      <p className="admin-players-hint">
+        {list.length} compte{list.length !== 1 ? 's' : ''} enregistré{list.length !== 1 ? 's' : ''}. La suppression efface le compte, tous les paris et les défis associés.
+      </p>
+      <div className="admin-players-list">
+        {list.map((p) => (
+          <div key={p.pseudoId} className="admin-player-row">
+            <AvatarDisplay avatar={p.avatar} size={36} />
+            <div className="admin-player-info">
+              <span className="admin-player-name">
+                {p.name}
+                {p.isMe && <span className="admin-player-me"> (vous)</span>}
+              </span>
+              <span className="admin-player-meta">{p.pseudoId} · {p.betsCount} paris</span>
+            </div>
+
+            {p.isMe ? (
+              <span className="admin-player-protected">protégé</span>
+            ) : confirming === p.pseudoId ? (
+              <div className="admin-player-confirm">
+                <span className="admin-player-confirm-text">Supprimer ?</span>
+                <button
+                  className="admin-player-confirm-cancel"
+                  onClick={() => setConfirming(null)}
+                >
+                  Non
+                </button>
+                <button
+                  className="admin-player-confirm-ok"
+                  onClick={() => handleDelete(p.pseudoId)}
+                  disabled={deleting === p.pseudoId}
+                >
+                  {deleting === p.pseudoId ? '...' : 'Oui'}
+                </button>
+              </div>
+            ) : (
+              <button
+                className="admin-player-delete"
+                onClick={() => setConfirming(p.pseudoId)}
+              >
+                🗑 Supprimer
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function AdminMatchRow({ match, adminPwd, onSuccess }) {
   const { results, allBets, players } = useApp()
@@ -164,6 +250,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [activePhase, setActivePhase] = useState('group')
+  const [adminTab, setAdminTab] = useState('results') // 'results' | 'players'
 
   async function handleAuth(e) {
     e.preventDefault()
@@ -227,24 +314,46 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <div className="filter-tabs" style={{ marginBottom: 20 }}>
-        {PHASES.map((p) => (
-          <button
-            key={p.key}
-            className={`filter-tab ${activePhase === p.key ? 'active' : ''}`}
-            onClick={() => setActivePhase(p.key)}
-          >
-            {p.label}
-          </button>
-        ))}
+      {/* Top-level tab switcher */}
+      <div className="admin-main-tabs">
+        <button
+          className={`admin-main-tab ${adminTab === 'results' ? 'active' : ''}`}
+          onClick={() => setAdminTab('results')}
+        >
+          ⚽ Résultats
+        </button>
+        <button
+          className={`admin-main-tab ${adminTab === 'players' ? 'active' : ''}`}
+          onClick={() => setAdminTab('players')}
+        >
+          👥 Joueurs
+        </button>
       </div>
 
-      {phaseMatches.length === 0 ? (
-        <div className="empty-state"><p>Aucun match dans cette phase.</p></div>
+      {adminTab === 'players' ? (
+        <PlayerManager />
       ) : (
-        phaseMatches.map((m) => (
-          <AdminMatchRow key={m.id} match={m} adminPwd={adminPwd} />
-        ))
+        <>
+          <div className="filter-tabs" style={{ marginBottom: 20 }}>
+            {PHASES.map((p) => (
+              <button
+                key={p.key}
+                className={`filter-tab ${activePhase === p.key ? 'active' : ''}`}
+                onClick={() => setActivePhase(p.key)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {phaseMatches.length === 0 ? (
+            <div className="empty-state"><p>Aucun match dans cette phase.</p></div>
+          ) : (
+            phaseMatches.map((m) => (
+              <AdminMatchRow key={m.id} match={m} adminPwd={adminPwd} />
+            ))
+          )}
+        </>
       )}
     </div>
   )
