@@ -85,7 +85,6 @@ app.delete('/api/results/:matchId', async (req, res) => {
   try {
     await db.ref(`matches/${matchId}`).update({
       result: null,
-      status: 'FINISHED',
       manualOverride: false,
       'score/winner': null,
       'score/fullTime/home': null,

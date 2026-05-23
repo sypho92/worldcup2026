@@ -45,5 +45,5 @@ export function getPointsForPhase(phase) {
 }
 
 export function isKnockout(phase) {
-  return ['r32', 'r16', 'qf', 'sf', 'third', 'final', 'cl_final', 'liga'].includes(phase)
+  return ['r32', 'r16', 'qf', 'sf', 'third', 'final', 'cl_final'].includes(phase)
 }
