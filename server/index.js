@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const { db } = require('./firebase')
+const { startSync } = require('./sync')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -52,7 +53,14 @@ app.post('/api/results/:matchId', async (req, res) => {
   else winner = 'draw'
 
   try {
-    await db.ref(`matches/${matchId}/result`).set({ homeScore: hs, awayScore: as, winner })
+    await db.ref(`matches/${matchId}`).update({
+      result: { homeScore: hs, awayScore: as, winner },
+      'score/winner': winner,
+      'score/fullTime/home': hs,
+      'score/fullTime/away': as,
+      status: 'FINISHED',
+      manualOverride: true,
+    })
 
     // Also update team names if provided (for knockout matches)
     if (homeTeam) await db.ref(`matches/${matchId}/homeTeam`).set(homeTeam)
@@ -75,7 +83,27 @@ app.delete('/api/results/:matchId', async (req, res) => {
   }
 
   try {
-    await db.ref(`matches/${matchId}/result`).remove()
+    await db.ref(`matches/${matchId}`).update({
+      result: null,
+      status: 'FINISHED',
+      manualOverride: false,
+      'score/winner': null,
+      'score/fullTime/home': null,
+      'score/fullTime/away': null,
+    })
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' })
+  }
+})
+
+// Remove manualOverride — resumes auto sync for this match
+app.delete('/api/matches/:matchId/override', async (req, res) => {
+  const { password } = req.body
+  const { matchId } = req.params
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' })
+  try {
+    await db.ref(`matches/${matchId}/manualOverride`).set(false)
     res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: 'Database error' })
@@ -92,4 +120,5 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`)
+  startSync()
 })
