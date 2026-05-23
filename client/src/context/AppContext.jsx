@@ -22,6 +22,20 @@ function deriveGroupsData(matches) {
   )
 }
 
+function normalizeMatch(m) {
+  if (!m.utcDate) return m
+  const d = new Date(m.utcDate)
+  const date = d.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+  const time = d.toLocaleTimeString('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false })
+  return {
+    ...m,
+    date,
+    time,
+    homeTeam: { ...m.homeTeam, flag: m.homeTeam?.crest || null },
+    awayTeam: { ...m.awayTeam, flag: m.awayTeam?.crest || null },
+  }
+}
+
 export function AppProvider({ children }) {
   const [player, setPlayer] = useState(() => {
     try {
@@ -61,7 +75,7 @@ export function AppProvider({ children }) {
     const matchesRef = ref(db, 'matches')
     const unsub = onValue(matchesRef, (snap) => {
       const data = snap.val() || {}
-      const arr = Object.values(data)
+      const arr = Object.values(data).map(normalizeMatch)
       setMatches(arr)
 
       const res = {}

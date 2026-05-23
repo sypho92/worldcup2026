@@ -41,7 +41,8 @@ export function getPhaseBadgeColor(phase) {
 }
 
 export function getPointsForPhase(phase) {
-  return 1
+  const pts = { group: 1, demo: 1, liga: 1, cl_final: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }
+  return pts[phase] ?? 1
 }
 
 export function isKnockout(phase) {
