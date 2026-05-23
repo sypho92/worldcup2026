@@ -1,10 +1,26 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { ref, onValue, set, get, remove, update } from 'firebase/database'
 import { db } from '../firebase'
-import { matches, getPointsForPhase, DEMO_RESULTS, DEMO_BETS } from '../data/mockData'
+import { getPointsForPhase } from '../utils/format'
 import { getParisNow } from '../utils/time'
 
 const AppContext = createContext(null)
+
+function deriveGroupsData(matches) {
+  const groups = {}
+  matches
+    .filter((m) => m.phase === 'group')
+    .forEach((m) => {
+      if (!groups[m.group]) groups[m.group] = new Map()
+      groups[m.group].set(m.homeTeam.name, m.homeTeam)
+      groups[m.group].set(m.awayTeam.name, m.awayTeam)
+    })
+  return Object.fromEntries(
+    Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([g, teamsMap]) => [g, { teams: [...teamsMap.values()] }])
+  )
+}
 
 export function AppProvider({ children }) {
   const [player, setPlayer] = useState(() => {
@@ -16,6 +32,8 @@ export function AppProvider({ children }) {
     }
   })
 
+  const [matches, setMatches] = useState([])
+  const [matchesLoading, setMatchesLoading] = useState(true)
   const [myBets, setMyBets] = useState({})
   const [allBets, setAllBets] = useState({})
   const [players, setPlayers] = useState({})
@@ -24,7 +42,6 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [parisNow, setParisNow] = useState(getParisNow)
 
-  // Refresh Paris clock every 30s so locked state updates in real time
   useEffect(() => {
     const id = setInterval(() => setParisNow(getParisNow()), 30_000)
     return () => clearInterval(id)
@@ -32,29 +49,32 @@ export function AppProvider({ children }) {
 
   const isMatchLocked = useCallback(
     (match) => {
-      if (!match.date || !match.time) return false
-      if (parisNow.date > match.date) return true
-      if (parisNow.date < match.date) return false
-      return parisNow.time >= match.time
+      if (!match.utcDate) return false
+      // parisNow dep triggers re-evaluation every 30s so UI updates lock state in real time
+      return Date.now() >= new Date(match.utcDate).getTime()
     },
     [parisNow]
   )
 
-  // Subscribe to Firebase results
+  // Matches + results from Firebase (single listener)
   useEffect(() => {
-    const resultsRef = ref(db, 'matches')
-    const unsub = onValue(resultsRef, (snap) => {
+    const matchesRef = ref(db, 'matches')
+    const unsub = onValue(matchesRef, (snap) => {
       const data = snap.val() || {}
+      const arr = Object.values(data)
+      setMatches(arr)
+
       const res = {}
-      Object.entries(data).forEach(([matchId, val]) => {
-        if (val.result) res[matchId] = val.result
+      arr.forEach((m) => {
+        if (m.result) res[m.id] = m.result
       })
-      setResults({ ...DEMO_RESULTS, ...res })
+      setResults(res)
+
+      setMatchesLoading(false)
     })
     return () => unsub()
   }, [])
 
-  // Subscribe to all players
   useEffect(() => {
     const playersRef = ref(db, 'players')
     const unsub = onValue(playersRef, (snap) => {
@@ -64,7 +84,6 @@ export function AppProvider({ children }) {
     return () => unsub()
   }, [])
 
-  // Subscribe to all bets
   useEffect(() => {
     const betsRef = ref(db, 'bets')
     const unsub = onValue(betsRef, (snap) => {
@@ -73,7 +92,6 @@ export function AppProvider({ children }) {
     return () => unsub()
   }, [])
 
-  // Subscribe to challenges
   useEffect(() => {
     const challengesRef = ref(db, 'challenges')
     const unsub = onValue(challengesRef, (snap) => {
@@ -82,42 +100,48 @@ export function AppProvider({ children }) {
     return () => unsub()
   }, [])
 
-  // Sync my bets when player changes or allBets updates
   useEffect(() => {
     if (!player) {
       setMyBets({})
       return
     }
-    setMyBets({ ...DEMO_BETS, ...(allBets[player.pseudoId] || {}) })
+    setMyBets(allBets[player.pseudoId] || {})
   }, [player, allBets])
+
+  const matchesById = useMemo(
+    () => Object.fromEntries(matches.map((m) => [m.id, m])),
+    [matches]
+  )
+
+  const groupsData = useMemo(() => deriveGroupsData(matches), [matches])
 
   const login = useCallback(async (name, avatar) => {
     const pseudoId = name.toLowerCase().replace(/\s+/g, '_')
     const playerData = { name, avatar, createdAt: Date.now() }
-
-    // Create or retrieve player
     const playerRef = ref(db, `players/${pseudoId}`)
     const snap = await get(playerRef)
     if (!snap.exists()) {
       await set(playerRef, playerData)
     }
-
     const stored = { pseudoId, name: snap.exists() ? snap.val().name : name, avatar }
     localStorage.setItem('wc2026_player', JSON.stringify(stored))
     setPlayer(stored)
     return stored
   }, [])
 
-  const updateProfile = useCallback(async ({ name, avatar }) => {
-    if (!player) return
-    const changes = {}
-    if (name !== undefined) changes.name = name
-    if (avatar !== undefined) changes.avatar = avatar
-    await update(ref(db, `players/${player.pseudoId}`), changes)
-    const stored = { ...player, ...changes }
-    localStorage.setItem('wc2026_player', JSON.stringify(stored))
-    setPlayer(stored)
-  }, [player])
+  const updateProfile = useCallback(
+    async ({ name, avatar }) => {
+      if (!player) return
+      const changes = {}
+      if (name !== undefined) changes.name = name
+      if (avatar !== undefined) changes.avatar = avatar
+      await update(ref(db, `players/${player.pseudoId}`), changes)
+      const stored = { ...player, ...changes }
+      localStorage.setItem('wc2026_player', JSON.stringify(stored))
+      setPlayer(stored)
+    },
+    [player]
+  )
 
   const logout = useCallback(() => {
     localStorage.removeItem('wc2026_player')
@@ -138,7 +162,6 @@ export function AppProvider({ children }) {
     [player, myBets]
   )
 
-  // Send a challenge to another player for a specific match
   const sendChallenge = useCallback(
     async ({ matchId, challengedId, type, gage }) => {
       if (!player) return
@@ -147,7 +170,7 @@ export function AppProvider({ children }) {
         matchId,
         challengerId: player.pseudoId,
         challengedId,
-        type,        // 'double' | 'gage' | 'both'
+        type,
         gage: gage || '',
         status: 'pending',
         createdAt: Date.now(),
@@ -157,27 +180,26 @@ export function AppProvider({ children }) {
     [player]
   )
 
-  // Accept or reject a challenge
   const respondToChallenge = useCallback(async (challengeId, response) => {
     await update(ref(db, `challenges/${challengeId}`), { status: response })
   }, [])
 
-  // Delete a player account (admin only) — removes player, bets, and their challenges
-  const deletePlayer = useCallback(async (pseudoId) => {
-    const removals = [
-      remove(ref(db, `players/${pseudoId}`)),
-      remove(ref(db, `bets/${pseudoId}`)),
-    ]
-    // Remove challenges involving this player
-    Object.entries(challenges).forEach(([id, c]) => {
-      if (c.challengerId === pseudoId || c.challengedId === pseudoId) {
-        removals.push(remove(ref(db, `challenges/${id}`)))
-      }
-    })
-    await Promise.all(removals)
-  }, [challenges])
+  const deletePlayer = useCallback(
+    async (pseudoId) => {
+      const removals = [
+        remove(ref(db, `players/${pseudoId}`)),
+        remove(ref(db, `bets/${pseudoId}`)),
+      ]
+      Object.entries(challenges).forEach(([id, c]) => {
+        if (c.challengerId === pseudoId || c.challengedId === pseudoId) {
+          removals.push(remove(ref(db, `challenges/${id}`)))
+        }
+      })
+      await Promise.all(removals)
+    },
+    [challenges]
+  )
 
-  // Compute points for a given playerId (includes wrong count + double bonuses)
   const computePoints = useCallback(
     (pseudoId) => {
       const playerBets = allBets[pseudoId] || {}
@@ -197,7 +219,6 @@ export function AppProvider({ children }) {
         }
       })
 
-      // Bonus point from accepted double challenges
       Object.values(challenges).forEach((challenge) => {
         if (challenge.status !== 'accepted') return
         if (challenge.type !== 'double' && challenge.type !== 'both') return
@@ -210,22 +231,36 @@ export function AppProvider({ children }) {
 
       return { total, correct, wrong }
     },
-    [allBets, results, challenges]
+    [allBets, results, challenges, matches]
   )
 
-  // Scoreboard: ranked list of all players with points
   const scoreboard = useCallback(() => {
     return Object.entries(players)
       .map(([pseudoId, p]) => {
         const { total, correct, wrong } = computePoints(pseudoId)
-        return { pseudoId, name: p.name, avatar: p.avatar, points: total, correctBets: correct, wrongBets: wrong }
+        return {
+          pseudoId,
+          name: p.name,
+          avatar: p.avatar,
+          points: total,
+          correctBets: correct,
+          wrongBets: wrong,
+        }
       })
       .sort((a, b) => b.points - a.points || b.correctBets - a.correctBets)
   }, [players, computePoints])
 
-  const myPoints = player ? computePoints(player.pseudoId) : { total: 0, correct: 0, wrong: 0 }
-  const myBetsCount = Object.keys(myBets).length
-  const playedCount = Object.keys(results).length
+  const myPoints = useMemo(
+    () => (player ? computePoints(player.pseudoId) : { total: 0, correct: 0, wrong: 0 }),
+    [player, computePoints]
+  )
+
+  const myBetsCount = useMemo(() => Object.keys(myBets).length, [myBets])
+
+  const playedCount = useMemo(
+    () => matches.filter((m) => m.result !== null && m.result !== undefined).length,
+    [matches]
+  )
 
   return (
     <AppContext.Provider
@@ -234,6 +269,10 @@ export function AppProvider({ children }) {
         login,
         logout,
         updateProfile,
+        matches,
+        matchesById,
+        matchesLoading,
+        groupsData,
         myBets,
         allBets,
         players,
