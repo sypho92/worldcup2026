@@ -185,6 +185,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
   const bet = myBets[match.id]
   const finished = !!result
   const locked = !finished && isMatchLocked(match)
+  const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const knockout = isKnockout(match.phase)
 
   const phaseLabel =
@@ -231,7 +232,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
               {bet === result.winner ? '✓' : '✗'}
             </span>
           )}
-          {locked && (
+          {isLive && (
             <div className="sched-live-badge">
               <span className="sched-live-dot" />
               Live
