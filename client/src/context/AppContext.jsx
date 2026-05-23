@@ -64,10 +64,21 @@ export function AppProvider({ children }) {
   const isMatchLocked = useCallback(
     (match) => {
       if (!match.utcDate) return false
-      // parisNow dep triggers re-evaluation every 30s so UI updates lock state in real time
-      return Date.now() >= new Date(match.utcDate).getTime()
+      // Lock if match has started (parisNow dep triggers re-eval every 30s)
+      if (Date.now() >= new Date(match.utcDate).getTime()) return true
+      // Lock if an accepted challenge involves the current player on this match
+      if (player) {
+        const hasAcceptedChallenge = Object.values(challenges).some(
+          (c) =>
+            c.matchId === match.id &&
+            c.status === 'accepted' &&
+            (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
+        )
+        if (hasAcceptedChallenge) return true
+      }
+      return false
     },
-    [parisNow]
+    [parisNow, challenges, player]
   )
 
   // Matches + results from Firebase (single listener)
