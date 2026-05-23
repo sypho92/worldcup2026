@@ -38,3 +38,6 @@ client/.vite/
 .firebase/
 firebase-debug.log
 firestore-debug.log
+
+# Git worktrees
+.worktrees/
