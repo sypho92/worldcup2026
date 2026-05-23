@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
-import { matches, isKnockout } from '../data/mockData'
+import { isKnockout } from '../utils/format'
 import Flag from './Flag'
 import { AvatarDisplay } from './AvatarDisplay'
 import { abbrev } from '../utils/format'
 
 export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
-  const { results, myBets, placeBet, isMatchLocked, allBets, players, player } = useApp()
+  const { results, myBets, placeBet, isMatchLocked, allBets, players, player, matchesById } = useApp()
   const [animating, setAnimating] = useState(null)
 
-  const match = matches.find((m) => m.id === matchId)
+  const match = matchesById[matchId]
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }

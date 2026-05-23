@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import { abbrev } from '../utils/format'
@@ -20,7 +19,7 @@ const FADE_MS = 600      // fade-out transition
 const REST_MS = 60_000   // 1 min silent gap between each item
 
 export default function LiveTicker() {
-  const { allBets, players, results, challenges, player } = useApp()
+  const { allBets, players, results, challenges, player, matchesById } = useApp()
 
   const [current, setCurrent]     = useState(null)
   const [fading, setFading]       = useState(false)
@@ -42,7 +41,7 @@ export default function LiveTicker() {
       if (!c.gage || c.status === 'rejected') return
       const challenger = players[c.challengerId]
       const challenged = players[c.challengedId]
-      const match = matches.find((m) => m.id === c.matchId)
+      const match = matchesById[c.matchId]
       if (!challenger || !challenged || !match || results[c.matchId]) return
       gageItems.push({
         type: 'gage', matchId: c.matchId,
@@ -58,7 +57,7 @@ export default function LiveTicker() {
       const p = players[pId]
       if (!p) return
       Object.entries(bets).forEach(([matchId, outcome]) => {
-        const match = matches.find((m) => m.id === matchId)
+        const match = matchesById[matchId]
         if (!match || results[matchId]) return
         const team = outcome === 'home' ? match.homeTeam
                    : outcome === 'away' ? match.awayTeam
@@ -78,7 +77,7 @@ export default function LiveTicker() {
     }
 
     return [...gageItems, ...betItems]
-  }, [allBets, players, results, challenges, player])
+  }, [allBets, players, results, challenges, player, matchesById])
 
   // ── Initialise queue when items become available for the first time ──────────
   useEffect(() => {

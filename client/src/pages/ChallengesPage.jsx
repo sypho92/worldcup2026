@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import Flag from '../components/Flag'
 import { abbrev } from '../utils/format'
@@ -141,11 +140,12 @@ function Section({ title, badge, badgeVariant, emptyIcon, emptyText, items, chil
 
 /* ── Challenge card ───────────────────────────────────────────────────────── */
 function ChallengeCard({ challenge, mode, players, allBets, results, player, onRespond }) {
+  const { matchesById } = useApp()
   const otherId = challenge.challengerId === player.pseudoId
     ? challenge.challengedId
     : challenge.challengerId
   const other = players[otherId]
-  const match = matches.find(m => m.id === challenge.matchId)
+  const match = matchesById[challenge.matchId]
   if (!other || !match) return null
 
   const myBet    = allBets[player.pseudoId]?.[challenge.matchId]

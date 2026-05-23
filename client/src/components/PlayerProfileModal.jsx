@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import ChallengeModal from './ChallengeModal'
@@ -17,7 +16,7 @@ const PHASES = [
 ]
 
 export default function PlayerProfileModal({ playerId, onClose }) {
-  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked } = useApp()
+  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked, matches } = useApp()
   const [challengeMatchId, setChallengeMatchId] = useState(null)
 
   const player = players[playerId]

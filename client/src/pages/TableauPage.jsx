@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, GROUPS_DATA } from '../data/mockData'
 import { computeGroupStandings } from '../utils/standings'
 import MatchCard from '../components/MatchCard'
 import Flag from '../components/Flag'
@@ -32,11 +31,11 @@ function shortName(name) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GroupCard({ groupId, group, selected, onClick }) {
-  const { results, myBets } = useApp()
+  const { results, myBets, matches } = useApp()
   const color = GROUP_COLORS[groupId]
   const groupMatches = useMemo(
     () => matches.filter((m) => m.phase === 'group' && m.group === groupId),
-    [groupId]
+    [groupId, matches]
   )
   const played = groupMatches.filter((m) => results[m.id]).length
   const betCount = groupMatches.filter((m) => myBets[m.id]).length
@@ -70,17 +69,17 @@ function GroupCard({ groupId, group, selected, onClick }) {
 }
 
 function GroupDetail({ groupId, onClose }) {
-  const { results } = useApp()
-  const group = GROUPS_DATA[groupId]
+  const { results, matches, groupsData } = useApp()
+  const group = groupsData[groupId]
   const color = GROUP_COLORS[groupId]
 
   const groupMatches = useMemo(
     () => matches.filter((m) => m.phase === 'group' && m.group === groupId),
-    [groupId]
+    [groupId, matches]
   )
   const standings = useMemo(
-    () => computeGroupStandings(group.teams, groupMatches, results),
-    [groupId, results]
+    () => group ? computeGroupStandings(group.teams, groupMatches, results) : [],
+    [group, groupMatches, results]
   )
 
   return (
@@ -148,11 +147,12 @@ function GroupDetail({ groupId, onClose }) {
 
 function GroupsTab() {
   const [selected, setSelected] = useState(null)
+  const { groupsData } = useApp()
 
   return (
     <div>
       <div className="groups-grid">
-        {Object.entries(GROUPS_DATA).map(([gid, group]) => (
+        {Object.entries(groupsData).map(([gid, group]) => (
           <GroupCard
             key={gid}
             groupId={gid}
@@ -187,8 +187,8 @@ const FINAL_ID = 'm104'
 const THIRD_ID = 'm103'
 
 function BracketSlot({ matchId, isFinal }) {
-  const { results, myBets } = useApp()
-  const match = matches.find((m) => m.id === matchId)
+  const { results, myBets, matchesById } = useApp()
+  const match = matchesById[matchId]
   if (!match) return null
 
   const result = results[matchId]
@@ -329,9 +329,10 @@ function KnockoutTab() {
   const [view, setView] = useState('bracket')
   const [listRound, setListRound] = useState('r32')
 
+  const { matches } = useApp()
   const listMatches = useMemo(
     () => matches.filter((m) => m.phase === listRound),
-    [listRound]
+    [listRound, matches]
   )
 
   return (

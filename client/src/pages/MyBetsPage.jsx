@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, getPointsForPhase } from '../data/mockData'
+import { getPointsForPhase } from '../utils/format'
 import ScheduleRow from '../components/ScheduleRow'
 
 const PHASES = [
@@ -45,7 +45,7 @@ function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
 }
 
 export default function MyBetsPage() {
-  const { myBets } = useApp()
+  const { myBets, matches } = useApp()
   const totalBets = Object.keys(myBets).length
 
   const matchesByPhase = useMemo(() => {
@@ -55,7 +55,7 @@ export default function MyBetsPage() {
       if (ms.length > 0) map[p.key] = ms
     })
     return map
-  }, [])
+  }, [matches])
 
   return (
     <div className="page sched-page">

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, GROUPS_DATA } from '../data/mockData'
 import { computeAllGroupStandings } from '../utils/standings'
 import Flag from '../components/Flag'
 import { AvatarDisplay } from '../components/AvatarDisplay'
@@ -19,7 +18,7 @@ const PHASES = [
 
 function PerPhaseAccordion({ pseudoId }) {
   const [open, setOpen] = useState(false)
-  const { allBets, results } = useApp()
+  const { allBets, results, matches } = useApp()
 
   const phaseStats = useMemo(() => {
     const playerBets = allBets[pseudoId] || {}
@@ -64,9 +63,10 @@ function PerPhaseAccordion({ pseudoId }) {
 
 function GroupTable({ groupId, teams, groupMatches, results }) {
   const [open, setOpen] = useState(false)
+  const { matches, groupsData } = useApp()
   const standings = useMemo(
-    () => computeAllGroupStandings(GROUPS_DATA, matches, results),
-    [results]
+    () => computeAllGroupStandings(groupsData, matches, results),
+    [groupsData, matches, results]
   )
   const rows = standings[groupId] || []
 
@@ -122,7 +122,7 @@ function GroupTable({ groupId, teams, groupMatches, results }) {
 }
 
 export default function ScoreboardPage() {
-  const { player, scoreboard, results } = useApp()
+  const { player, scoreboard, results, matches, groupsData } = useApp()
   const [showGroups, setShowGroups] = useState(false)
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
 
@@ -179,7 +179,7 @@ export default function ScoreboardPage() {
 
       {showGroups && (
         <div>
-          {Object.entries(GROUPS_DATA).map(([gid, group]) => (
+          {Object.entries(groupsData).map(([gid, group]) => (
             <GroupTable
               key={gid}
               groupId={gid}

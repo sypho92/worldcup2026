@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
-import { getPhaseLabel, isKnockout } from '../data/mockData'
+import { getPhaseLabel, isKnockout } from '../utils/format'
 import Flag from './Flag'
 import { AvatarDisplay } from './AvatarDisplay'
 import PlayerProfileModal from './PlayerProfileModal'

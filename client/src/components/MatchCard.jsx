@@ -1,5 +1,5 @@
 import { useApp } from '../context/AppContext'
-import { getPhaseLabel, getPhaseBadgeColor } from '../data/mockData'
+import { getPhaseLabel, getPhaseBadgeColor } from '../utils/format'
 import BetButtons from './BetButtons'
 import Flag from './Flag'
 

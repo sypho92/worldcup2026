@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import { abbrev } from '../utils/format'
 
 export default function ChallengeModal({ matchId, challengedId, onClose }) {
-  const { player, players, sendChallenge, myBets, allBets, challenges } = useApp()
+  const { player, players, sendChallenge, myBets, allBets, challenges, matchesById } = useApp()
   const [type, setType] = useState('double')
   const [gage, setGage] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  const match = matches.find((m) => m.id === matchId)
+  const match = matchesById[matchId]
   const challenged = players[challengedId]
   const myBet = myBets[matchId]
   const theirBet = allBets[challengedId]?.[matchId]

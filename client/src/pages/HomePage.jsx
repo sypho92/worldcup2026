@@ -1,13 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import { resizeImageToBase64 } from '../utils/image'
 import ScheduleRow from '../components/ScheduleRow'
 
 const AVATARS = ['⚽', '🏆', '🦁', '🦅', '🐺', '🦊', '🐯', '🦋', '🌟', '🔥', '⚡', '🎯']
-
-const TOTAL = matches.length
 
 // ─── Étapes de la compétition ─────────────────────────────────────────────────
 const COMP_STAGES = [
@@ -21,6 +18,7 @@ const COMP_STAGES = [
 ]
 
 function CompetitionStepper({ results }) {
+  const { matches } = useApp()
   const statuses = COMP_STAGES.map((s) => {
     const stageMatches = matches.filter((m) => m.phase === s.key)
     if (stageMatches.length === 0) return { ...s, st: 'upcoming' }
@@ -240,7 +238,7 @@ function formatCountdown(diffMs) {
 
 // Renvoie l'ID du prochain match non commencé
 function useNextMatchId() {
-  const { isMatchLocked } = useApp()
+  const { isMatchLocked, matches } = useApp()
   return useMemo(() => {
     return matches
       .filter((m) => m.date && m.time && !isMatchLocked(m))
@@ -251,6 +249,7 @@ function useNextMatchId() {
 // Bandeau décompte — ne s'affiche que si targetMatchId est le prochain match
 function NextMatchCountdown({ targetMatchId }) {
   const nextMatchId = useNextMatchId()
+  const { matchesById } = useApp()
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -260,7 +259,7 @@ function NextMatchCountdown({ targetMatchId }) {
 
   if (!nextMatchId || nextMatchId !== targetMatchId) return null
 
-  const nextMatch = matches.find((m) => m.id === nextMatchId)
+  const nextMatch = matchesById[nextMatchId]
   if (!nextMatch) return null
 
   const matchTs = new Date(`${nextMatch.date}T${nextMatch.time}:00+02:00`).getTime()
@@ -281,7 +280,7 @@ function NextMatchCountdown({ targetMatchId }) {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { player, myPoints, myBetsCount, playedCount, scoreboard, results } = useApp()
+  const { player, myPoints, myBetsCount, playedCount, scoreboard, results, matches } = useApp()
   const [filter, setFilter] = useState('all')
   const [showProfile, setShowProfile] = useState(false)
   const todayRef = useRef(null)

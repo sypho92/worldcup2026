@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import { abbrev } from '../utils/format'
 
 export default function ChallengeNotifications() {
-  const { player, players, challenges, respondToChallenge, allBets } = useApp()
+  const { player, players, challenges, respondToChallenge, allBets, matchesById } = useApp()
   const [dismissed, setDismissed] = useState({})
 
   const pending = useMemo(() => {
@@ -26,7 +25,7 @@ export default function ChallengeNotifications() {
   return (
     <div className="challenge-notifications">
       {pending.map((challenge) => {
-        const match = matches.find((m) => m.id === challenge.matchId)
+        const match = matchesById[challenge.matchId]
         const challenger = players[challenge.challengerId]
         const theirBet = allBets[challenge.challengerId]?.[challenge.matchId]
         const theirTeam =

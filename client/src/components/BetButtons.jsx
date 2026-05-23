@@ -1,5 +1,5 @@
 import { useApp } from '../context/AppContext'
-import { isKnockout } from '../data/mockData'
+import { isKnockout } from '../utils/format'
 
 export default function BetButtons({ match, compact = false }) {
   const { myBets, placeBet, results, isMatchLocked } = useApp()
