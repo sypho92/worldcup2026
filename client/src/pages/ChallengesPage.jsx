@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import Flag from '../components/Flag'
 import { abbrev } from '../utils/format'
@@ -141,11 +140,12 @@ function Section({ title, badge, badgeVariant, emptyIcon, emptyText, items, chil
 
 /* ── Challenge card ───────────────────────────────────────────────────────── */
 function ChallengeCard({ challenge, mode, players, allBets, results, player, onRespond }) {
+  const { matchesById } = useApp()
   const otherId = challenge.challengerId === player.pseudoId
     ? challenge.challengedId
     : challenge.challengerId
   const other = players[otherId]
-  const match = matches.find(m => m.id === challenge.matchId)
+  const match = matchesById[challenge.matchId]
   if (!other || !match) return null
 
   const myBet    = allBets[player.pseudoId]?.[challenge.matchId]
@@ -179,9 +179,9 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
           <span className="challenge-card-name">{other.name}</span>
           <span className="challenge-card-match">
             <Flag flag={match.homeTeam.flag} size={12} />
-            <span>{abbrev(match.homeTeam.name)}</span>
+            <span>{abbrev(match.homeTeam)}</span>
             <span className="challenge-card-sep">–</span>
-            <span>{abbrev(match.awayTeam.name)}</span>
+            <span>{abbrev(match.awayTeam)}</span>
             <Flag flag={match.awayTeam.flag} size={12} />
           </span>
         </div>
@@ -200,7 +200,7 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
             <span className="challenge-card-bet-label">Toi</span>
             <span className="challenge-card-bet-val">
               {myBetTeam
-                ? <><Flag flag={myBetTeam.flag} size={13} /> {abbrev(myBetTeam.name)}</>
+                ? <><Flag flag={myBetTeam.flag} size={13} /> {abbrev(myBetTeam)}</>
                 : myBet === 'draw' ? 'Nul'
                 : <span className="challenge-card-no-bet">—</span>}
             </span>
@@ -210,7 +210,7 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
             <span className="challenge-card-bet-label">{other.name}</span>
             <span className="challenge-card-bet-val">
               {theirBetTeam
-                ? <><Flag flag={theirBetTeam.flag} size={13} /> {abbrev(theirBetTeam.name)}</>
+                ? <><Flag flag={theirBetTeam.flag} size={13} /> {abbrev(theirBetTeam)}</>
                 : theirBet === 'draw' ? 'Nul'
                 : <span className="challenge-card-no-bet">—</span>}
             </span>
@@ -255,7 +255,7 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
           )}
           {result && (
             <div className="challenge-outcome-score">
-              {abbrev(match.homeTeam.name)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam.name)}
+              {abbrev(match.homeTeam)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam)}
             </div>
           )}
         </div>
@@ -278,7 +278,7 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
           )}
           {result && (
             <div className="challenge-outcome-score">
-              {abbrev(match.homeTeam.name)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam.name)}
+              {abbrev(match.homeTeam)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam)}
             </div>
           )}
         </div>

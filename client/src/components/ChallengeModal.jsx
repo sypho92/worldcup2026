@@ -1,20 +1,19 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import { abbrev } from '../utils/format'
 
 export default function ChallengeModal({ matchId, challengedId, onClose }) {
-  const { player, players, sendChallenge, myBets, allBets, challenges } = useApp()
+  const { player, players, sendChallenge, myBets, allBets, challenges, matchesById } = useApp()
   const [type, setType] = useState('double')
   const [gage, setGage] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  const match = matches.find((m) => m.id === matchId)
+  const match = matchesById[matchId]
   const challenged = players[challengedId]
   const myBet = myBets[matchId]
   const theirBet = allBets[challengedId]?.[matchId]
@@ -98,7 +97,7 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
                 <span className="challenge-opponent-sub">
                   mise sur&nbsp;
                   {theirBetTeam ? (
-                    <><Flag flag={theirBetTeam.flag} size={12} /> {abbrev(theirBetTeam.name)}</>
+                    <><Flag flag={theirBetTeam.flag} size={12} /> {abbrev(theirBetTeam)}</>
                   ) : 'Nul'}
                 </span>
               </div>
@@ -107,9 +106,9 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
             {/* Match */}
             <div className="challenge-match-row">
               <Flag flag={match.homeTeam.flag} size={22} />
-              <span className="challenge-match-abbr">{abbrev(match.homeTeam.name)}</span>
+              <span className="challenge-match-abbr">{abbrev(match.homeTeam)}</span>
               <span className="challenge-match-sep">–</span>
-              <span className="challenge-match-abbr">{abbrev(match.awayTeam.name)}</span>
+              <span className="challenge-match-abbr">{abbrev(match.awayTeam)}</span>
               <Flag flag={match.awayTeam.flag} size={22} />
             </div>
 
@@ -117,11 +116,11 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
             <div className="challenge-bets-row">
               <div className="challenge-bet-mine">
                 <AvatarDisplay avatar={player?.avatar} size={20} />
-                <span>{myBetTeam ? abbrev(myBetTeam.name) : 'Nul'}</span>
+                <span>{myBetTeam ? abbrev(myBetTeam) : 'Nul'}</span>
               </div>
               <span className="challenge-bets-sword">⚔</span>
               <div className="challenge-bet-theirs">
-                <span>{theirBetTeam ? abbrev(theirBetTeam.name) : 'Nul'}</span>
+                <span>{theirBetTeam ? abbrev(theirBetTeam) : 'Nul'}</span>
                 <AvatarDisplay avatar={challenged.avatar} size={20} />
               </div>
             </div>

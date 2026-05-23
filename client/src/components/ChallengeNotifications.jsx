@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import { abbrev } from '../utils/format'
 
 export default function ChallengeNotifications() {
-  const { player, players, challenges, respondToChallenge, allBets } = useApp()
+  const { player, players, challenges, respondToChallenge, allBets, matchesById } = useApp()
   const [dismissed, setDismissed] = useState({})
 
   const pending = useMemo(() => {
@@ -26,7 +25,7 @@ export default function ChallengeNotifications() {
   return (
     <div className="challenge-notifications">
       {pending.map((challenge) => {
-        const match = matches.find((m) => m.id === challenge.matchId)
+        const match = matchesById[challenge.matchId]
         const challenger = players[challenge.challengerId]
         const theirBet = allBets[challenge.challengerId]?.[challenge.matchId]
         const theirTeam =
@@ -50,7 +49,7 @@ export default function ChallengeNotifications() {
                 <span className="challenge-notif-sub">
                   te défie sur{' '}
                   <Flag flag={match.homeTeam.flag} size={11} />
-                  {abbrev(match.homeTeam.name)} – {abbrev(match.awayTeam.name)}
+                  {abbrev(match.homeTeam)} – {abbrev(match.awayTeam)}
                   <Flag flag={match.awayTeam.flag} size={11} />
                 </span>
               </div>
@@ -68,7 +67,7 @@ export default function ChallengeNotifications() {
             <div className="challenge-notif-their-bet">
               Il mise sur :{' '}
               {theirTeam ? (
-                <><Flag flag={theirTeam.flag} size={12} /> <strong>{abbrev(theirTeam.name)}</strong></>
+                <><Flag flag={theirTeam.flag} size={12} /> <strong>{abbrev(theirTeam)}</strong></>
               ) : <strong>Nul</strong>}
             </div>
 

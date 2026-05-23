@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches, getPhaseLabel, getPhaseBadgeColor } from '../data/mockData'
+import { getPhaseLabel, getPhaseBadgeColor } from '../utils/format'
 import Flag from '../components/Flag'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 
@@ -244,6 +244,7 @@ function AdminMatchRow({ match, adminPwd, onSuccess }) {
 }
 
 export default function AdminPage() {
+  const { matches } = useApp()
   const [authenticated, setAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const [adminPwd, setAdminPwd] = useState('')

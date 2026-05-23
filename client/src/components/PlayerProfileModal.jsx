@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { matches } from '../data/mockData'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
 import ChallengeModal from './ChallengeModal'
@@ -17,7 +16,7 @@ const PHASES = [
 ]
 
 export default function PlayerProfileModal({ playerId, onClose }) {
-  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked } = useApp()
+  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked, matches } = useApp()
   const [challengeMatchId, setChallengeMatchId] = useState(null)
 
   const player = players[playerId]
@@ -102,15 +101,15 @@ export default function PlayerProfileModal({ playerId, onClose }) {
                 <div key={m.id} className="ppm-opposition-row">
                   <div className="ppm-opp-match">
                     <Flag flag={m.homeTeam.flag} size={13} />
-                    <span>{abbrev(m.homeTeam.name)}</span>
+                    <span>{abbrev(m.homeTeam)}</span>
                     <span className="ppm-opp-sep">–</span>
-                    <span>{abbrev(m.awayTeam.name)}</span>
+                    <span>{abbrev(m.awayTeam)}</span>
                     <Flag flag={m.awayTeam.flag} size={13} />
                   </div>
                   <div className="ppm-opp-bets">
-                    <span className="ppm-opp-mine">{myTeam ? abbrev(myTeam.name) : 'Nul'}</span>
+                    <span className="ppm-opp-mine">{myTeam ? abbrev(myTeam) : 'Nul'}</span>
                     <span className="ppm-opp-sword">⚔</span>
-                    <span className="ppm-opp-theirs">{theirTeam ? abbrev(theirTeam.name) : 'Nul'}</span>
+                    <span className="ppm-opp-theirs">{theirTeam ? abbrev(theirTeam) : 'Nul'}</span>
                   </div>
                   {locked ? (
                     <span className="ppm-opp-locked">🔒 Live</span>
@@ -159,9 +158,9 @@ export default function PlayerProfileModal({ playerId, onClose }) {
                       {/* Équipes */}
                       <div className="ppm-bet-teams">
                         <Flag flag={match.homeTeam.flag} size={14} />
-                        <span>{abbrev(match.homeTeam.name)}</span>
+                        <span>{abbrev(match.homeTeam)}</span>
                         <span className="ppm-bet-vs">—</span>
-                        <span>{abbrev(match.awayTeam.name)}</span>
+                        <span>{abbrev(match.awayTeam)}</span>
                         <Flag flag={match.awayTeam.flag} size={14} />
                       </div>
 
@@ -172,7 +171,7 @@ export default function PlayerProfileModal({ playerId, onClose }) {
                         ) : betTeam ? (
                           <>
                             <Flag flag={betTeam.flag} size={14} />
-                            <span>{abbrev(betTeam.name)}</span>
+                            <span>{abbrev(betTeam)}</span>
                           </>
                         ) : null}
                         {result && (
