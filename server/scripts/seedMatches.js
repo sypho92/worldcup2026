@@ -81,7 +81,7 @@ async function seedWC2026() {
   const apiMatches = await fetchMatches(COMPETITIONS.WC)
   const sorted = sortChronologically(apiMatches)
 
-  let seeded = 0
+  const batch = {}
   let skipped = 0
 
   for (let i = 0; i < sorted.length; i++) {
@@ -89,18 +89,20 @@ async function seedWC2026() {
     const matchId = `m${String(i + 1).padStart(3, '0')}`
 
     if (await fdIdAlreadySeeded(apiMatch.id)) {
-      console.log(`  skip ${matchId} fdId=${apiMatch.id} (already seeded)`)
       skipped++
       continue
     }
 
     const mapped = mapMatch(apiMatch, matchId)
-    await db.ref(`matches/${matchId}`).set(mapped)
-    console.log(`  seeded ${matchId}: ${mapped.homeTeam.name} vs ${mapped.awayTeam.name} (${mapped.phase})`)
-    seeded++
+    batch[matchId] = mapped
   }
 
-  console.log(`WC2026: ${seeded} seeded, ${skipped} skipped`)
+  if (Object.keys(batch).length > 0) {
+    await db.ref('matches').update(batch)
+    console.log(`WC2026: ${Object.keys(batch).length} seeded, ${skipped} skipped`)
+  } else {
+    console.log(`WC2026: 0 seeded (all ${skipped} already exist)`)
+  }
 }
 
 async function seedDemoMatches() {
