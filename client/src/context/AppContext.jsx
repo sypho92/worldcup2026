@@ -31,8 +31,8 @@ function normalizeMatch(m) {
     ...m,
     date,
     time,
-    homeTeam: { ...m.homeTeam, flag: m.homeTeam?.crest || null },
-    awayTeam: { ...m.awayTeam, flag: m.awayTeam?.crest || null },
+    homeTeam: { ...m.homeTeam, flag: m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' },
+    awayTeam: { ...m.awayTeam, flag: m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' },
   }
 }
 

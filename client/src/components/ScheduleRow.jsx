@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import { getPhaseLabel, isKnockout } from '../utils/format'
@@ -81,13 +81,13 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
       <div className="bet-bar-labels">
         <span className="bet-bar-side bet-bar-side--home">
           <Flag flag={match.homeTeam.flag} size={12} />
-          {abbrev(match.homeTeam.name)} <strong>{pHome}%</strong>
+          {abbrev(match.homeTeam)} <strong>{pHome}%</strong>
         </span>
         {!knockout && pDraw > 0 && (
           <span className="bet-bar-side bet-bar-side--draw">Nul {pDraw}%</span>
         )}
         <span className="bet-bar-side bet-bar-side--away">
-          <strong>{pAway}%</strong> {abbrev(match.awayTeam.name)}
+          <strong>{pAway}%</strong> {abbrev(match.awayTeam)}
           <Flag flag={match.awayTeam.flag} size={12} />
         </span>
       </div>
@@ -211,7 +211,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
 
         {/* Centre : équipes */}
         <div className="sched-teams">
-          <span className="sched-name">{abbrev(match.homeTeam.name)}</span>
+          <span className="sched-name">{abbrev(match.homeTeam)}</span>
           <Flag flag={match.homeTeam.flag} size={40} />
 
           {finished ? (
@@ -221,7 +221,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
           )}
 
           <Flag flag={match.awayTeam.flag} size={40} />
-          <span className="sched-name">{abbrev(match.awayTeam.name)}</span>
+          <span className="sched-name">{abbrev(match.awayTeam)}</span>
         </div>
 
         {/* Droite : résultat / LIVE */}
@@ -255,7 +255,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
             onClick={() => handleBet('home')}
             onAnimationEnd={() => setAnimatingBtn(null)}
           >
-            <Flag flag={match.homeTeam.flag} size={28} /> {abbrev(match.homeTeam.name)}
+            <Flag flag={match.homeTeam.flag} size={28} /> {abbrev(match.homeTeam)}
           </button>
           {!knockout && (
             <button
@@ -271,7 +271,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
             onClick={() => handleBet('away')}
             onAnimationEnd={() => setAnimatingBtn(null)}
           >
-            <Flag flag={match.awayTeam.flag} size={28} /> {abbrev(match.awayTeam.name)}
+            <Flag flag={match.awayTeam.flag} size={28} /> {abbrev(match.awayTeam)}
           </button>
         </div>
       )}

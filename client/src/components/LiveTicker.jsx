@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
@@ -175,7 +175,7 @@ export default function LiveTicker() {
                   }
                 </div>
                 <div className="live-ticker-sub">
-                  {abbrev(current.match.homeTeam.name)} – {abbrev(current.match.awayTeam.name)}
+                  {abbrev(current.match.homeTeam)} – {abbrev(current.match.awayTeam)}
                   {' · '}{current.match.time}
                 </div>
               </>

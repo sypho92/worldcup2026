@@ -280,10 +280,11 @@ function NextMatchCountdown({ targetMatchId }) {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { player, myPoints, myBetsCount, playedCount, scoreboard, results, matches } = useApp()
+  const { player, myPoints, myBetsCount, playedCount, scoreboard, results, matches, matchesLoading } = useApp()
   const [filter, setFilter] = useState('all')
   const [showProfile, setShowProfile] = useState(false)
   const todayRef = useRef(null)
+  const scrolledRef = useRef(false)
 
   const rank = useMemo(() => {
     const board = scoreboard()
@@ -311,11 +312,14 @@ export default function HomePage() {
   const stickyRef = useRef(null)
 
   useEffect(() => {
+    if (matchesLoading) return
+    if (scrolledRef.current) return
     if (!todayRef.current) return
+    scrolledRef.current = true
     const stickyHeight = stickyRef.current ? stickyRef.current.offsetHeight : 0
     const top = todayRef.current.getBoundingClientRect().top + window.scrollY - stickyHeight
     window.scrollTo(0, Math.max(0, top))
-  }, [])
+  }, [matchesLoading, sections])
 
   return (
     <div className="page sched-page">

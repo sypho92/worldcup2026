@@ -13,6 +13,7 @@ const GROUP_COLORS = {
 
 // Abrège les noms TBD pour le bracket
 function shortName(name) {
+  if (!name) return '?'
   return name
     .replace('1er Groupe ', '1er ')
     .replace('2e Groupe ', '2e ')
@@ -198,19 +199,19 @@ function BracketSlot({ matchId, isFinal }) {
   if (result && bet) borderColor = bet === result.winner ? 'var(--success)' : 'var(--error)'
   else if (bet) borderColor = 'var(--accent)'
 
-  const homeName = shortName(match.homeTeam.name)
-  const awayName = shortName(match.awayTeam.name)
+  const homeName = shortName(match.homeTeam?.name)
+  const awayName = shortName(match.awayTeam?.name)
 
   return (
     <div className={`b-slot${isFinal ? ' b-slot--final' : ''}`} style={{ borderColor }}>
       <div className="b-slot-row">
-        <Flag flag={match.homeTeam.flag} size={14} />
+        <Flag flag={match.homeTeam?.flag} size={14} />
         <span className="b-slot-name">{homeName}</span>
         {result && <span className="b-slot-score">{result.homeScore}</span>}
       </div>
       <div className="b-slot-div" />
       <div className="b-slot-row">
-        <Flag flag={match.awayTeam.flag} size={14} />
+        <Flag flag={match.awayTeam?.flag} size={14} />
         <span className="b-slot-name">{awayName}</span>
         {result && <span className="b-slot-score">{result.awayScore}</span>}
       </div>

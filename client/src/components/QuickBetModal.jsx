@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import { isKnockout } from '../utils/format'
@@ -61,13 +61,13 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
           <div className="qb-teams">
             <div className="qb-team">
               <Flag flag={match.homeTeam.flag} size={40} />
-              <span className="qb-team-name">{abbrev(match.homeTeam.name)}</span>
+              <span className="qb-team-name">{abbrev(match.homeTeam)}</span>
             </div>
             <span className="qb-sep">
               {finished ? `${result.homeScore} – ${result.awayScore}` : `${match.time}`}
             </span>
             <div className="qb-team qb-team--away">
-              <span className="qb-team-name">{abbrev(match.awayTeam.name)}</span>
+              <span className="qb-team-name">{abbrev(match.awayTeam)}</span>
               <Flag flag={match.awayTeam.flag} size={40} />
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
                 <span
                   key={p.pseudoId}
                   className={`qb-bettor-av${highlightPlayer === p.pseudoId ? ' highlighted' : ''}`}
-                  title={`${p.name} → ${abbrev(match.homeTeam.name)}`}
+                  title={`${p.name} → ${abbrev(match.homeTeam)}`}
                 >
                   <AvatarDisplay avatar={p.avatar} size={28} />
                 </span>
@@ -109,7 +109,7 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
                 <span
                   key={p.pseudoId}
                   className={`qb-bettor-av${highlightPlayer === p.pseudoId ? ' highlighted' : ''}`}
-                  title={`${p.name} → ${abbrev(match.awayTeam.name)}`}
+                  title={`${p.name} → ${abbrev(match.awayTeam)}`}
                 >
                   <AvatarDisplay avatar={p.avatar} size={28} />
                 </span>
@@ -139,8 +139,8 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
               <div className="qb-current-bet">
                 Ton pari actuel :{' '}
                 <strong>
-                  {bet === 'home' ? abbrev(match.homeTeam.name)
-                    : bet === 'away' ? abbrev(match.awayTeam.name)
+                  {bet === 'home' ? abbrev(match.homeTeam)
+                    : bet === 'away' ? abbrev(match.awayTeam)
                     : 'Nul'}
                 </strong>
                 <span className="qb-current-bet-hint"> (cliquer pour changer)</span>
@@ -152,7 +152,7 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
                 onClick={() => handleBet('home')}
               >
                 <Flag flag={match.homeTeam.flag} size={26} />
-                <span>{abbrev(match.homeTeam.name)}</span>
+                <span>{abbrev(match.homeTeam)}</span>
               </button>
               {!knockout && (
                 <button
@@ -167,7 +167,7 @@ export default function QuickBetModal({ matchId, onClose, highlightPlayer }) {
                 onClick={() => handleBet('away')}
               >
                 <Flag flag={match.awayTeam.flag} size={26} />
-                <span>{abbrev(match.awayTeam.name)}</span>
+                <span>{abbrev(match.awayTeam)}</span>
               </button>
             </div>
           </>

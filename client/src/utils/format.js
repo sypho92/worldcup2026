@@ -2,7 +2,12 @@
  * Abbreviates a team name to 3 uppercase characters.
  * Single word: first 3 letters. Multiple words: initials.
  */
-export function abbrev(name) {
+export function abbrev(nameOrTeam) {
+  if (!nameOrTeam) return '???'
+  if (typeof nameOrTeam === 'object') {
+    return nameOrTeam.shortName || nameOrTeam.tla || abbrev(nameOrTeam.name)
+  }
+  const name = nameOrTeam
   const words = name.split(' ')
   if (words.length === 1) return name.slice(0, 3).toUpperCase()
   return words.map((w) => w[0]).join('').toUpperCase().slice(0, 3)

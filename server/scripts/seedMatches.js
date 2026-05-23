@@ -66,14 +66,22 @@ function sortChronologically(matches) {
   return [...matches].sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
 }
 
+let _existingMatches = null
+async function getExistingMatches() {
+  if (_existingMatches !== null) return _existingMatches
+  const snap = await db.ref('matches').get()
+  _existingMatches = snap.exists() ? snap.val() : {}
+  return _existingMatches
+}
+
 async function fdIdAlreadySeeded(fdId) {
-  const snap = await db.ref('matches').orderByChild('fdId').equalTo(fdId).limitToFirst(1).get()
-  return snap.exists()
+  const existing = await getExistingMatches()
+  return Object.values(existing).some(m => m.fdId === fdId)
 }
 
 async function matchIdAlreadySeeded(matchId) {
-  const snap = await db.ref(`matches/${matchId}`).get()
-  return snap.exists()
+  const existing = await getExistingMatches()
+  return matchId in existing
 }
 
 async function seedWC2026() {

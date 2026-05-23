@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from './AvatarDisplay'
 import Flag from './Flag'
@@ -49,7 +49,7 @@ export default function ChallengeNotifications() {
                 <span className="challenge-notif-sub">
                   te défie sur{' '}
                   <Flag flag={match.homeTeam.flag} size={11} />
-                  {abbrev(match.homeTeam.name)} – {abbrev(match.awayTeam.name)}
+                  {abbrev(match.homeTeam)} – {abbrev(match.awayTeam)}
                   <Flag flag={match.awayTeam.flag} size={11} />
                 </span>
               </div>
@@ -67,7 +67,7 @@ export default function ChallengeNotifications() {
             <div className="challenge-notif-their-bet">
               Il mise sur :{' '}
               {theirTeam ? (
-                <><Flag flag={theirTeam.flag} size={12} /> <strong>{abbrev(theirTeam.name)}</strong></>
+                <><Flag flag={theirTeam.flag} size={12} /> <strong>{abbrev(theirTeam)}</strong></>
               ) : <strong>Nul</strong>}
             </div>
 
