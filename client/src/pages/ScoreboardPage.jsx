@@ -35,7 +35,7 @@ function PerPhaseAccordion({ pseudoId }) {
       const played = phaseMatches.filter((m) => results[m.id]).length
       return { ...p, pts, correct, played }
     }).filter((p) => p.played > 0)
-  }, [allBets, pseudoId, results])
+  }, [allBets, pseudoId, results, matches])
 
   if (phaseStats.length === 0) return null
 

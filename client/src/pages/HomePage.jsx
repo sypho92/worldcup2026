@@ -243,7 +243,7 @@ function useNextMatchId() {
     return matches
       .filter((m) => m.date && m.time && !isMatchLocked(m))
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]?.id ?? null
-  }, [isMatchLocked])
+  }, [isMatchLocked, matches])
 }
 
 // Bandeau décompte — ne s'affiche que si targetMatchId est le prochain match
