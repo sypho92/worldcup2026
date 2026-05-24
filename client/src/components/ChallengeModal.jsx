@@ -75,7 +75,7 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
             <p className="challenge-sent-text">Défi envoyé à <strong>{challenged.name}</strong> !</p>
             <p className="challenge-sent-sub">Il recevra une notification.</p>
           </div>
-        ) : existing && existing.status !== 'rejected' ? (
+        ) : existing && existing.status !== 'rejected' && existing.status !== 'cancelled' ? (
           <div className="challenge-existing">
             <div className="challenge-existing-icon">{existing.status === 'accepted' ? '⚔' : '⏳'}</div>
             <p className="challenge-existing-text">{statusLabel}</p>

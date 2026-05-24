@@ -17,23 +17,52 @@ function flagToCode(emoji) {
 }
 
 export default function Flag({ flag, size = 20 }) {
+  // Conteneur commun — taille fixe, centrage garanti dans n'importe quel contexte
+  const wrap = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: size,
+    height: size,
+    flexShrink: 0,
+  }
+
   if (flag?.startsWith('http') || flag?.startsWith('/')) {
     return (
-      <img
-        src={flag}
-        alt=""
-        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, display: 'inline-block' }}
-      />
+      <span style={wrap}>
+        <img
+          src={flag}
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        />
+      </span>
     )
   }
+
   const code = flagToCode(flag)
   if (code) {
+    // fi-xx utilise background-image ; on lui impose la hauteur et laisse le ratio 4:3
     return (
-      <span
-        className={`fi fi-${code}`}
-        style={{ fontSize: size, borderRadius: 3, flexShrink: 0 }}
-      />
+      <span style={{ ...wrap, width: 'auto' }}>
+        <span
+          className={`fi fi-${code}`}
+          style={{
+            display: 'block',
+            width: Math.round(size * 1.33),
+            height: size,
+            backgroundSize: 'cover',
+            backgroundPosition: '50%',
+            borderRadius: 3,
+            flexShrink: 0,
+          }}
+        />
+      </span>
     )
   }
-  return <span style={{ fontSize: size, lineHeight: 1, flexShrink: 0 }}>{flag}</span>
+
+  return (
+    <span style={wrap}>
+      <span style={{ fontSize: size * 0.9, lineHeight: 1 }}>{flag}</span>
+    </span>
+  )
 }

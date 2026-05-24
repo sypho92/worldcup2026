@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import { getPhaseLabel, isKnockout } from '../utils/format'
@@ -108,7 +108,7 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
           const id1 = `${match.id}_${player.pseudoId}_vs_${p.pseudoId}`
           const id2 = `${match.id}_${p.pseudoId}_vs_${player.pseudoId}`
           const ex = challenges[id1] || challenges[id2]
-          return !ex || ex.status === 'rejected'
+          return !ex || ex.status === 'rejected' || ex.status === 'cancelled'
         })
         const pending = opponents.filter((p) => {
           const id1 = `${match.id}_${player.pseudoId}_vs_${p.pseudoId}`
@@ -171,10 +171,11 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
 }
 
 export default function ScheduleRow({ match, entryDelay = 0 }) {
-  const { results, myBets, placeBet, isMatchLocked } = useApp()
+  const { results, myBets, placeBet, isMatchLocked, challenges, players, player, requestCancelChallenge, respondToCancelChallenge } = useApp()
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
   const [challengedId, setChallengedId] = useState(null)
   const [animatingBtn, setAnimatingBtn] = useState(null)
+  const [expanded, setExpanded] = useState(false)
 
   function handleBet(outcome) {
     placeBet(match.id, outcome)
@@ -188,6 +189,57 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
   const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const knockout = isKnockout(match.phase)
 
+  // Défis qui verrouillent ce match pour le joueur courant
+  const lockingChallenges = useMemo(() => {
+    if (!player || !locked) return []
+    return Object.entries(challenges)
+      .filter(([, c]) =>
+        c.matchId === match.id &&
+        (c.status === 'accepted' || c.status === 'cancel_requested') &&
+        (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
+      )
+      .map(([id, c]) => {
+        const otherId = c.challengerId === player.pseudoId ? c.challengedId : c.challengerId
+        return { id, ...c, opponent: players[otherId] }
+      })
+  }, [player, locked, challenges, players, match.id])
+
+  const challengeLocked = locked && lockingChallenges.length > 0
+
+  // Chrono estimé — se rafraîchit toutes les 30s quand le match est en cours
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!isLive) return
+    const id = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [isLive])
+
+  const displayMinute = useMemo(() => {
+    if (!isLive || match.status === 'PAUSED') return null
+    // Priorité : minute fournie par l'API
+    if (match.minute != null) return match.minute
+    if (!match.utcDate) return null
+
+    const elapsed = Math.max(0, Math.floor((now - new Date(match.utcDate).getTime()) / 60000))
+
+    // 2ème mi-temps — heure exacte enregistrée par le serveur
+    if (match.secondHalfKickoff) {
+      const elapsed2 = Math.max(0, Math.floor((now - match.secondHalfKickoff) / 60000))
+      return Math.min(90, 45 + elapsed2)
+    }
+
+    // 2ème mi-temps détectée par le temps écoulé (>60 min depuis utcDate)
+    if (elapsed > 60) return Math.min(90, Math.max(46, elapsed - 15))
+
+    // 1ère mi-temps
+    return Math.min(45, Math.max(1, elapsed))
+  }, [isLive, match.status, match.minute, match.utcDate, match.secondHalfKickoff, now])
+
+  // Score en direct depuis l'API
+  const liveHome = match.score?.fullTime?.home ?? match.score?.halfTime?.home ?? null
+  const liveAway = match.score?.fullTime?.away ?? match.score?.halfTime?.away ?? null
+  const hasLiveScore = isLive && liveHome !== null && liveAway !== null
+
   const phaseLabel =
     match.phase === 'group'
       ? `Groupe ${match.group} · J${match.matchday}`
@@ -195,7 +247,9 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
 
   let rowClass = 'sched-row'
   if (finished && bet) rowClass += bet === result.winner ? ' sched-row--correct' : ' sched-row--wrong'
-  else if (bet && !locked) rowClass += ' sched-row--bet'
+  else if (finished && !bet) rowClass += ' sched-row--unbet'
+  else if (bet) rowClass += ' sched-row--bet'          // gold même si verrouillé par défi
+  else if (challengeLocked) rowClass += ' sched-row--challenge-locked'
   else if (locked) rowClass += ' sched-row--locked'
 
   function getBtnState(outcome) {
@@ -206,39 +260,46 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
   return (
     <div className={rowClass} style={{ '--card-delay': `${entryDelay}s` }}>
 
-      <div className="sched-time-badge">{match.time}</div>
+      {/* Badge statut : heure / minute live / Mi-temps / Terminé */}
+      {finished ? (
+        <div className="sched-time-badge sched-time-badge--score">
+          <span className="sched-badge-status">Terminé</span>
+        </div>
+      ) : match.status === 'PAUSED' ? (
+        <div className="sched-time-badge sched-time-badge--live">
+          <span className="sched-badge-status sched-badge-status--paused">Mi-temps</span>
+        </div>
+      ) : isLive ? (
+        <div className="sched-time-badge sched-time-badge--live">
+          <span className="sched-badge-status sched-badge-status--live">
+            {displayMinute != null ? `${displayMinute}'` : '?'}
+          </span>
+        </div>
+      ) : !locked ? (
+        <div className="sched-time-badge">{match.time ?? '--:--'}</div>
+      ) : null}
 
       <div className="sched-main">
 
-        {/* Centre : équipes */}
+        {/* Centre : équipes + score entre les drapeaux */}
         <div className="sched-teams">
           <span className="sched-name">{abbrev(match.homeTeam)}</span>
           <Flag flag={match.homeTeam.flag} size={40} />
 
           {finished ? (
             <span className="sched-score">{result.homeScore} – {result.awayScore}</span>
+          ) : hasLiveScore ? (
+            <span className="sched-score sched-score--live">{liveHome} – {liveAway}</span>
           ) : (
-            <span className="sched-sep">/</span>
+            !locked && <span className="sched-sep">/</span>
           )}
 
           <Flag flag={match.awayTeam.flag} size={40} />
           <span className="sched-name">{abbrev(match.awayTeam)}</span>
         </div>
 
-        {/* Droite : résultat / LIVE */}
-        <div className="sched-right">
-          {finished && bet && (
-            <span className={`sched-result-icon ${bet === result.winner ? 'correct' : 'wrong'}`}>
-              {bet === result.winner ? '✓' : '✗'}
-            </span>
-          )}
-          {isLive && (
-            <div className="sched-live-badge">
-              <span className="sched-live-dot" />
-              Live
-            </div>
-          )}
-        </div>
+        {/* Droite : vide (résultat déplacé en bandeau bas) */}
+        <div className="sched-right" />
 
       </div>
 
@@ -247,7 +308,96 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         <span className="sched-phase-badge">{phaseLabel}</span>
       </div>
 
-      <BetBar match={match} onPlayerClick={setViewedPlayerId} onChallengeClick={setChallengedId} />
+      {/* Bandeau défi — même structure que sched-result-banner, en jaune */}
+      {challengeLocked && lockingChallenges.map((c) => {
+        const isPending = c.status === 'cancel_requested'
+        const iRequested = isPending && c.cancelRequestedBy === player?.pseudoId
+        const opponentRequested = isPending && !iRequested
+        const label = iRequested
+          ? `Annulation en attente · ${c.opponent?.name?.split(' ')[0]}`
+          : opponentRequested
+          ? `${c.opponent?.name?.split(' ')[0]} demande l'annulation`
+          : `Défi en cours · ${c.opponent?.name?.split(' ')[0]}`
+        return (
+          <div
+            key={c.id}
+            className={[
+              'sched-challenge-lock',
+              iRequested ? 'sched-challenge-lock--pending' : '',
+              opponentRequested ? 'sched-challenge-lock--incoming' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <span className="sched-challenge-lock-icon">
+              {iRequested ? '⏳' : opponentRequested ? '⚠' : '⚔'}
+            </span>
+            <span className="sched-challenge-lock-text">{label}</span>
+
+            {/* Défi actif → bouton annuler */}
+            {!isPending && (
+              <button
+                className="sched-challenge-lock-cancel-btn"
+                onClick={(e) => { e.stopPropagation(); requestCancelChallenge(c.id) }}
+              >
+                Annuler le défi
+              </button>
+            )}
+
+            {/* L'adversaire a demandé → Refuser / Accepter */}
+            {opponentRequested && (
+              <div className="sched-challenge-lock-actions">
+                <button
+                  className="sched-challenge-lock-refuse-btn"
+                  onClick={(e) => { e.stopPropagation(); respondToCancelChallenge(c.id, false) }}
+                >
+                  ✗ Refuser
+                </button>
+                <button
+                  className="sched-challenge-lock-accept-btn"
+                  onClick={(e) => { e.stopPropagation(); respondToCancelChallenge(c.id, true) }}
+                >
+                  ✓ Accepter
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Bandeau résultat — toujours visible en bas pour les matchs terminés */}
+      {finished && bet && (
+        <div className={`sched-result-banner ${bet === result.winner ? 'sched-result-banner--correct' : 'sched-result-banner--wrong'}`}>
+          <span className="sched-result-banner-icon">{bet === result.winner ? '✓' : '✗'}</span>
+          <span className="sched-result-banner-text">
+            {bet === result.winner ? 'Pronostic correct' : 'Pronostic manqué'}
+          </span>
+        </div>
+      )}
+      {finished && !bet && (
+        <div className="sched-result-banner sched-result-banner--unbet">
+          <span className="sched-result-banner-icon">—</span>
+          <span className="sched-result-banner-text">Non pronostiqué</span>
+        </div>
+      )}
+
+      {/* Toggle déploiement — bouton AVANT le contenu pour que ça s'ouvre vers le bas */}
+      {finished && (
+        <button
+          className={`sched-expand-btn ${expanded ? 'sched-expand-btn--open' : ''}`}
+          onClick={() => setExpanded(e => !e)}
+        >
+          <span className="sched-expand-label">
+            {expanded ? 'Masquer les détails' : 'Voir les détails'}
+          </span>
+          <span className="sched-expand-chevron">{expanded ? '▲' : '▼'}</span>
+        </button>
+      )}
+
+      {/* BetBar :
+            - match à venir → toujours visible
+            - match terminé → déployable en dessous du bouton */}
+      {(!finished || expanded) && (
+        <BetBar match={match} onPlayerClick={setViewedPlayerId} onChallengeClick={setChallengedId} />
+      )}
 
       {!finished && !locked && (
         <div className="sched-bet-row">

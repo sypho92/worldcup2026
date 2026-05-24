@@ -5,36 +5,54 @@ import Flag from '../components/Flag'
 import { abbrev } from '../utils/format'
 
 export default function ChallengesPage() {
-  const { player, players, challenges, allBets, results, respondToChallenge } = useApp()
+  const { player, players, challenges, allBets, results, matchesById, respondToChallenge, requestCancelChallenge, respondToCancelChallenge } = useApp()
 
   // Enrich each challenge with computed win/loss state
   const enriched = useMemo(() => {
     if (!player) return []
     return Object.entries(challenges)
-      .filter(([, c]) =>
-        c.challengerId === player.pseudoId || c.challengedId === player.pseudoId
-      )
+      .filter(([, c]) => {
+        if (c.challengerId !== player.pseudoId && c.challengedId !== player.pseudoId) return false
+        // Exclure les challenges dont le match ou l'adversaire n'existe plus
+        const otherId = c.challengerId === player.pseudoId ? c.challengedId : c.challengerId
+        return !!matchesById[c.matchId] && !!players[otherId]
+      })
       .map(([id, c]) => {
-        const result = results[c.matchId]
-        const myBet  = allBets[player.pseudoId]?.[c.matchId]
-        const finished = !!result
-        const iWon  = finished && !!myBet && myBet === result?.winner
-        const iLost = finished && !!myBet && myBet !== result?.winner
-        return { id, ...c, finished, iWon, iLost }
+        const result    = results[c.matchId]
+        const otherId   = c.challengerId === player.pseudoId ? c.challengedId : c.challengerId
+        const myBet     = allBets[player.pseudoId]?.[c.matchId]
+        const theirBet  = allBets[otherId]?.[c.matchId]
+        const finished  = !!result
+        // Un défi est gagné uniquement si MOI j'ai bon ET l'adversaire a tort.
+        // Si aucun n'a le bon résultat (ex: nul alors que chacun a misé sur une équipe)
+        // → isNull = true, le gage est annulé, personne ne doit rien.
+        const iWon  = finished && !!myBet   && myBet   === result?.winner && theirBet !== result?.winner
+        const iLost = finished && !!theirBet && theirBet === result?.winner && myBet   !== result?.winner
+        const isNull = finished && !iWon && !iLost
+        return { id, ...c, finished, iWon, iLost, isNull }
       })
       .sort((a, b) => b.createdAt - a.createdAt)
-  }, [challenges, player, results, allBets])
+  }, [challenges, player, results, allBets, matchesById, players])
 
   if (!player) return null
 
   // Section buckets
   const toRespond = enriched.filter(c => c.challengedId === player.pseudoId && c.status === 'pending')
-  const enCours   = enriched.filter(c => c.status === 'accepted' && !c.finished)
+  const enCours   = enriched.filter(c => (c.status === 'accepted' || c.status === 'cancel_requested') && !c.finished)
   const aHonorer  = enriched.filter(c => c.status === 'accepted' && c.finished && c.iLost)
   const remportes = enriched.filter(c => c.status === 'accepted' && c.finished && c.iWon)
+  const annules   = enriched.filter(c =>
+    (c.status === 'accepted' && c.finished && c.isNull) ||
+    c.status === 'cancelled'
+  )
   const enAttente = enriched.filter(c => c.challengerId === player.pseudoId && c.status === 'pending')
 
-  const sharedProps = { players, allBets, results, player, onRespond: respondToChallenge }
+  const sharedProps = {
+    players, allBets, results, player,
+    onRespond: respondToChallenge,
+    onRequestCancel: requestCancelChallenge,
+    onRespondCancel: respondToCancelChallenge,
+  }
 
   return (
     <div className="page">
@@ -96,7 +114,21 @@ export default function ChallengesPage() {
         ))}
       </Section>
 
-      {/* 5 — Envoyés en attente */}
+      {/* 5 — Annulés (aucun n'avait le bon résultat) */}
+      <Section
+        title="Annulés"
+        badge={annules.length}
+        badgeVariant="muted"
+        emptyIcon="🤝"
+        emptyText=""
+        items={annules}
+      >
+        {annules.map(c => (
+          <ChallengeCard key={c.id} challenge={c} mode="null" {...sharedProps} />
+        ))}
+      </Section>
+
+      {/* 6 — Envoyés en attente */}
       <Section
         title="Envoyés"
         badge={enAttente.length}
@@ -139,7 +171,7 @@ function Section({ title, badge, badgeVariant, emptyIcon, emptyText, items, chil
 }
 
 /* ── Challenge card ───────────────────────────────────────────────────────── */
-function ChallengeCard({ challenge, mode, players, allBets, results, player, onRespond }) {
+function ChallengeCard({ challenge, mode, players, allBets, results, player, onRespond, onRequestCancel, onRespondCancel }) {
   const { matchesById } = useApp()
   const otherId = challenge.challengerId === player.pseudoId
     ? challenge.challengedId
@@ -166,7 +198,9 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
   const cardVariant =
     mode === 'lost'   ? 'error'
     : mode === 'won'  ? 'success'
+    : mode === 'active' && challenge.status === 'cancel_requested' ? 'cancel'
     : mode === 'active' ? 'gold'
+    : mode === 'null' ? 'muted'
     : 'default'
 
   return (
@@ -230,11 +264,50 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
         </div>
       )}
 
-      {/* ── Mode: active (match not played yet) ── */}
-      {mode === 'active' && (
+      {/* ── Mode: active — normal (accepted) ── */}
+      {mode === 'active' && challenge.status === 'accepted' && (
         <div className="challenge-card-active-footer">
           <span className="challenge-card-active-dot" />
           <span>Match le {match.date} à {match.time}</span>
+          <button
+            className="challenge-card-cancel-btn"
+            onClick={() => onRequestCancel(challenge.id)}
+          >
+            Annuler le défi
+          </button>
+        </div>
+      )}
+
+      {/* ── Mode: active — j'ai demandé l'annulation ── */}
+      {mode === 'active' && challenge.status === 'cancel_requested' && challenge.cancelRequestedBy === player.pseudoId && (
+        <div className="challenge-card-cancel-pending">
+          <div className="challenge-card-cancel-pending-text">
+            <span>⏳</span>
+            <span>Annulation demandée · en attente de {other.name}</span>
+          </div>
+          <button
+            className="challenge-card-cancel-withdraw"
+            onClick={() => onRespondCancel(challenge.id, false)}
+          >
+            Retirer la demande
+          </button>
+        </div>
+      )}
+
+      {/* ── Mode: active — l'adversaire a demandé l'annulation ── */}
+      {mode === 'active' && challenge.status === 'cancel_requested' && challenge.cancelRequestedBy !== player.pseudoId && (
+        <div className="challenge-card-cancel-incoming">
+          <div className="challenge-card-cancel-incoming-text">
+            ⚠ {other.name} demande l'annulation du défi
+          </div>
+          <div className="challenge-card-actions">
+            <button className="challenge-card-reject" onClick={() => onRespondCancel(challenge.id, false)}>
+              ✗ Refuser
+            </button>
+            <button className="challenge-card-accept" onClick={() => onRespondCancel(challenge.id, true)}>
+              ✓ Accepter
+            </button>
+          </div>
         </div>
       )}
 
@@ -280,6 +353,32 @@ function ChallengeCard({ challenge, mode, players, allBets, results, player, onR
             <div className="challenge-outcome-score">
               {abbrev(match.homeTeam)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam)}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Mode: null — annulation manuelle ou résultat nul ── */}
+      {mode === 'null' && (
+        <div className="challenge-card-outcome challenge-card-outcome--null">
+          {challenge.status === 'cancelled' ? (
+            <>
+              <div className="challenge-outcome-headline">🤝 Défi annulé</div>
+              <div className="challenge-outcome-sub">
+                Les deux joueurs ont accepté l'annulation
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="challenge-outcome-headline">🤝 Gage annulé</div>
+              <div className="challenge-outcome-sub">
+                Aucun des deux n'avait le bon résultat — personne ne doit rien
+              </div>
+              {result && (
+                <div className="challenge-outcome-score">
+                  {abbrev(match.homeTeam)} {result.homeScore} – {result.awayScore} {abbrev(match.awayTeam)}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

@@ -52,6 +52,7 @@ function CompetitionStepper({ results }) {
 function groupByDate(matchList) {
   const map = {}
   matchList.forEach((m) => {
+    if (!m.date) return          // ignore les matchs sans date connue
     if (!map[m.date]) map[m.date] = []
     map[m.date].push(m)
   })
@@ -284,6 +285,7 @@ export default function HomePage() {
   const [filter, setFilter] = useState('all')
   const [showProfile, setShowProfile] = useState(false)
   const todayRef = useRef(null)
+  const nextUpcomingRef = useRef(null)
   const scrolledRef = useRef(false)
 
   const rank = useMemo(() => {
@@ -309,15 +311,26 @@ export default function HomePage() {
         ...byDate.filter(([d]) => d > today),
       ]
 
+  // Première section à partir d'aujourd'hui avec au moins un match non terminé
+  const nextUpcomingDate = useMemo(() => {
+    for (const [dateStr, dayMatches] of sections) {
+      if (dateStr < today) continue                          // ignore les dates passées
+      if (dayMatches.some((m) => !results[m.id])) return dateStr
+    }
+    return null
+  }, [sections, results, today])
+
   const stickyRef = useRef(null)
 
   useEffect(() => {
     if (matchesLoading) return
     if (scrolledRef.current) return
-    if (!todayRef.current) return
+    // Cible : première section avec matchs à venir, sinon aujourd'hui
+    const target = nextUpcomingRef.current || todayRef.current
+    if (!target) return
     scrolledRef.current = true
     const stickyHeight = stickyRef.current ? stickyRef.current.offsetHeight : 0
-    const top = todayRef.current.getBoundingClientRect().top + window.scrollY - stickyHeight
+    const top = target.getBoundingClientRect().top + window.scrollY - stickyHeight
     window.scrollTo(0, Math.max(0, top))
   }, [matchesLoading, sections])
 
@@ -362,6 +375,15 @@ export default function HomePage() {
             </div>
             <div className="sched-stat-div" />
             <div className="sched-stat">
+              <span className="sched-stat-val">
+                {myPoints.correct + myPoints.wrong > 0
+                  ? Math.round((myPoints.correct / (myPoints.correct + myPoints.wrong)) * 100)
+                  : 0}%
+              </span>
+              <span className="sched-stat-lbl">réussite</span>
+            </div>
+            <div className="sched-stat-div" />
+            <div className="sched-stat">
               <span className="sched-stat-val">{rank}</span>
               <span className="sched-stat-lbl">rang</span>
             </div>
@@ -393,7 +415,14 @@ export default function HomePage() {
       {/* ── Schedule par date ── */}
       <div className="sched-list">
         {sections.map(([dateStr, dayMatches]) => (
-          <div key={dateStr} ref={dateStr === today ? todayRef : null}>
+          <div
+            key={dateStr}
+            ref={
+              dateStr === today ? todayRef :
+              dateStr === nextUpcomingDate ? nextUpcomingRef :
+              null
+            }
+          >
             <DateSection dateStr={dateStr} dayMatches={dayMatches} />
           </div>
         ))}

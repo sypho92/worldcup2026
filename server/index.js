@@ -3,7 +3,8 @@ const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const { db } = require('./firebase')
-const { startSync } = require('./sync')
+const { startSync, syncNow } = require('./sync')
+const { fetchMatches, mapMatch, STAGE_TO_PHASE } = require('./footballData')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -106,6 +107,55 @@ app.delete('/api/matches/:matchId/override', async (req, res) => {
     res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: 'Database error' })
+  }
+})
+
+// Force sync immédiat (admin only) — utile pour tester sans attendre le timer
+app.post('/api/admin/sync-now', async (req, res) => {
+  const { password } = req.body
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' })
+  try {
+    const result = await syncNow()
+    res.json({ success: true, hasLive: result.hasLive })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Diagnostic : liste les matchs retournés par football-data pour WC2026 (admin only)
+app.get('/api/admin/api-matches', async (req, res) => {
+  const { password } = req.query
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' })
+  try {
+    const matches = await fetchMatches(2000, { season: '2026' })
+    res.json({
+      count: matches.length,
+      matches: matches.slice(0, 10).map((m) => ({
+        id: m.id,
+        utcDate: m.utcDate,
+        status: m.status,
+        home: m.homeTeam?.name,
+        away: m.awayTeam?.name,
+      })),
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Patch manuel d'une date de match (admin only) — fallback si fdId manque
+app.post('/api/admin/patch-match-date', async (req, res) => {
+  const { password, matchId, utcDate } = req.body
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' })
+  if (!matchId || !utcDate) return res.status(400).json({ error: 'matchId and utcDate required' })
+  try {
+    const d = new Date(utcDate)
+    const date = d.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+    const time = d.toLocaleTimeString('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false })
+    await db.ref(`matches/${matchId}`).update({ utcDate, date, time })
+    res.json({ success: true, matchId, utcDate, date, time })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 })
 

@@ -23,17 +23,24 @@ function deriveGroupsData(matches) {
 }
 
 function normalizeMatch(m) {
-  if (!m.utcDate) return m
+  const homeTeam = { ...m.homeTeam, flag: m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' }
+  const awayTeam = { ...m.awayTeam, flag: m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' }
+
+  if (!m.utcDate) {
+    // Pas de date API : on conserve date/time existants si présents, sinon placeholder
+    return {
+      ...m,
+      homeTeam,
+      awayTeam,
+      date: m.date || null,
+      time: m.time || null,
+    }
+  }
+
   const d = new Date(m.utcDate)
   const date = d.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
   const time = d.toLocaleTimeString('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false })
-  return {
-    ...m,
-    date,
-    time,
-    homeTeam: { ...m.homeTeam, flag: m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' },
-    awayTeam: { ...m.awayTeam, flag: m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' },
-  }
+  return { ...m, date, time, homeTeam, awayTeam }
 }
 
 export function AppProvider({ children }) {
@@ -67,18 +74,20 @@ export function AppProvider({ children }) {
       // Lock if match has started (parisNow dep triggers re-eval every 30s)
       if (Date.now() >= new Date(match.utcDate).getTime()) return true
       // Lock if an accepted challenge involves the current player on this match
+      // BUT only if the player has already placed a bet — a challenge must never
+      // prevent placing a first bet, only changing an existing one.
       if (player) {
         const hasAcceptedChallenge = Object.values(challenges).some(
           (c) =>
             c.matchId === match.id &&
-            c.status === 'accepted' &&
+            (c.status === 'accepted' || c.status === 'cancel_requested') &&
             (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
         )
-        if (hasAcceptedChallenge) return true
+        if (hasAcceptedChallenge && myBets[match.id]) return true
       }
       return false
     },
-    [parisNow, challenges, player]
+    [parisNow, challenges, player, myBets]
   )
 
   // Matches + results from Firebase (single listener)
@@ -209,6 +218,25 @@ export function AppProvider({ children }) {
     await update(ref(db, `challenges/${challengeId}`), { status: response })
   }, [])
 
+  const requestCancelChallenge = useCallback(async (challengeId) => {
+    if (!player) return
+    await update(ref(db, `challenges/${challengeId}`), {
+      status: 'cancel_requested',
+      cancelRequestedBy: player.pseudoId,
+    })
+  }, [player])
+
+  const respondToCancelChallenge = useCallback(async (challengeId, accept) => {
+    if (accept) {
+      await update(ref(db, `challenges/${challengeId}`), { status: 'cancelled' })
+    } else {
+      await update(ref(db, `challenges/${challengeId}`), {
+        status: 'accepted',
+        cancelRequestedBy: null,
+      })
+    }
+  }, [])
+
   const deletePlayer = useCallback(
     async (pseudoId) => {
       const removals = [
@@ -272,7 +300,7 @@ export function AppProvider({ children }) {
           wrongBets: wrong,
         }
       })
-      .sort((a, b) => b.points - a.points || b.correctBets - a.correctBets)
+      .sort((a, b) => b.points - a.points || a.wrongBets - b.wrongBets || b.correctBets - a.correctBets)
   }, [players, computePoints])
 
   const myPoints = useMemo(
@@ -307,6 +335,8 @@ export function AppProvider({ children }) {
         placeBet,
         sendChallenge,
         respondToChallenge,
+        requestCancelChallenge,
+        respondToCancelChallenge,
         deletePlayer,
         computePoints,
         scoreboard,

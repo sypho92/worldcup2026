@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Preview — Design Amélioré</title>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0815;
+    --bg2: #100d22;
+    --bg3: #15112e;
+    --accent: #d4981e;
+    --accent2: #f0b429;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0eeff;
+    --muted: rgba(255,255,255,0.38);
+    --success: #22c55e;
+    --error: #ef4444;
+    --teko: 'Teko', 'Arial Narrow', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    /* Texture bruit subtile */
+    background-image:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,152,30,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(80,40,180,0.08) 0%, transparent 60%);
+  }
+
+  /* ─── LAYOUT ──────────────────────────────────── */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ─── SIDEBAR ──────────────────────────────────── */
+  .sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #0d0a1e 0%, #0a0815 100%);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .sb-logo {
+    padding: 0 16px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .sb-logo img { width: 120px; height: auto; mix-blend-mode: lighten; }
+  .sb-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sb-item.active { background: rgba(212,152,30,0.12); color: var(--accent); }
+  .sb-item svg { width: 18px; height: 18px; }
+  .sb-player {
+    margin: 0 8px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* FIFA-style player card bottom */
+  .sb-player-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: rgba(212,152,30,0.1);
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(212,152,30,0.25);
+  }
+  .sb-player-name {
+    font-family: var(--teko);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .sb-player-rank {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+  }
+
+  /* ─── MAIN ──────────────────────────────────────── */
+  .main { flex: 1; min-width: 0; }
+
+  /* ─── STICKY TOP ────────────────────────────────── */
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(10,8,21,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ─── HEADER (stats scoreboard) ─────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px 12px;
+    gap: 16px;
+  }
+
+  .player-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .player-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(212,152,30,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    overflow: hidden;
+    background: rgba(212,152,30,0.08);
+  }
+  .player-name {
+    font-family: var(--teko);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    text-align: left;
+  }
+  .player-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.3px; margin-top: 1px; }
+
+  /* SCOREBOARD STATS — nouveau design */
+  .scoreboard {
+    display: flex;
+    align-items: stretch;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .sc-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    position: relative;
+  }
+  .sc-cell + .sc-cell::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: var(--border);
+  }
+  .sc-val {
+    font-family: var(--teko);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  .sc-val--pts    { color: var(--accent); }
+  .sc-val--won    { color: var(--success); }
+  .sc-val--lost   { color: var(--error); }
+  .sc-val--rank   { color: var(--text); }
+  .sc-lbl {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* ─── FRISE ─────────────────────────────────────── */
+  .frise {
+    display: flex;
+    align-items: stretch;
+    margin: 0 24px 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    overflow: hidden;
+  }
+  .frise-item { display: flex; align-items: stretch; flex: 1; min-width: 0; position: relative; }
+  .frise-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px 9px 22px;
+    font-family: var(--teko);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+    margin-left: -10px;
+  }
+  .frise-item:first-child .frise-step { clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%); margin-left:0; padding-left:14px; }
+  .frise-item:last-child .frise-step  { clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%); padding-right:14px; }
+  .frise-step--done    { background: rgba(255,255,255,0.05); color: var(--muted); }
+  .frise-step--current { background: rgba(212,152,30,0.2); color: var(--accent); font-weight: 800; }
+  .frise-step--upcoming{ background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.2); }
+
+  /* ─── FILTERS ───────────────────────────────────── */
+  .filters { display: flex; gap: 6px; padding: 0 24px 14px; }
+  .filter-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  /* ─── CONTENT ────────────────────────────────────── */
+  .content { padding: 0 24px 40px; }
+
+  /* DATE HEADER — nouveau style magazine */
+  .date-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 28px 0 14px;
+  }
+  .date-accent {
+    width: 3px;
+    height: 28px;
+    background: linear-gradient(180deg, var(--accent) 0%, rgba(212,152,30,0) 100%);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .date-text {
+    font-family: var(--teko);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1;
+  }
+  .date-text span { color: var(--accent); }
+  .date-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+  }
+  .date-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  /* COUNTDOWN — LED style */
+  .countdown {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    background: rgba(212,152,30,0.06);
+    border: 1px solid rgba(212,152,30,0.2);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+  }
+  .countdown::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, rgba(212,152,30,0.06) 0%, transparent 60%);
+  }
+  .countdown-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    position: relative;
+  }
+  .countdown-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+  .countdown-time {
+    font-family: var(--teko);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    line-height: 1;
+    position: relative;
+    text-shadow: 0 0 20px rgba(212,152,30,0.5);
+  }
+
+  /* MATCH CARD — nouveau style */
+  .match-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    position: relative;
+  }
+  .match-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,152,30,0.15);
+  }
+
+  /* Coin coupé style esport */
+  .match-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 0 24px 24px 0;
+    border-color: transparent rgba(212,152,30,0.25) transparent transparent;
+  }
+
+  .match-card-inner {
+    padding: 16px 20px;
+    position: relative;
+    /* Dégradé très subtil basé équipes */
+    background: linear-gradient(135deg, rgba(212,0,30,0.04) 0%, transparent 40%, transparent 60%, rgba(0,60,180,0.04) 100%);
+  }
+
+  .match-phase-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .match-phase-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(212,152,30,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(212,152,30,0.25);
+  }
+  .match-datetime {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  /* Teams row */
+  .match-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 14px;
+  }
+  .team-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .team-side--home { flex-direction: row; justify-content: flex-end; }
+  .team-side--away { flex-direction: row; justify-content: flex-start; }
+  .team-logo {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .team-name {
+    font-family: var(--teko);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .team-side--home .team-name { margin-right: 10px; }
+  .team-side--away .team-name { margin-left: 10px; }
+
+  .match-vs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .match-time {
+    font-family: var(--teko);
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    line-height: 1;
+    text-shadow: 0 0 24px rgba(240,180,41,0.35);
+  }
+  .match-sep {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Bet bar */
+  .bet-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .bet-pct-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+  .bet-pct-home { font-size: 11px; font-weight: 700; color: var(--error); white-space: nowrap; }
+  .bet-pct-away { font-size: 11px; font-weight: 700; color: var(--success); white-space: nowrap; text-align: right; }
+  .bet-bar {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--success);
+    position: relative;
+    overflow: hidden;
+  }
+  .bet-bar-home {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--error);
+    border-radius: 2px;
+    width: 75%;
+  }
+
+  /* Bet buttons */
+  .bet-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .bet-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    font-family: var(--teko);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .bet-btn img { width: 20px; height: 20px; border-radius: 50%; }
+  .bet-btn--active {
+    background: rgba(212,0,30,0.18);
+    border-color: rgba(212,0,30,0.5);
+    color: #ff6b6b;
+    box-shadow: inset 0 0 0 1px rgba(212,0,30,0.3);
+  }
+  .bet-btn:hover:not(.bet-btn--active) {
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 20px;
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .empty-state::before {
+    content: '⚽';
+    position: absolute;
+    font-size: 120px;
+    opacity: 0.04;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .empty-title {
+    font-family: var(--teko);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .empty-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.5px;
+  }
+
+  /* Label CURRENT / AVANT vs APRÈS */
+  .label-pill {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: var(--accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="label-pill">✦ NOUVEAU DESIGN</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <img src="/logo.png" alt="Bet With Your Friends" />
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Accueil
+      </div>
+      <div class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Mes paris
+      </div>
+      <div class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Classement
+      </div>
+      <div class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Tableau
+      </div>
+      <div class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Défis
+      </div>
+      <div class="sb-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Admin
+      </div>
+    </nav>
+
+    <div class="sb-player">
+      <div class="sb-player-avatar">🦁</div>
+      <div>
+        <div class="sb-player-name">Cyril</div>
+        <div class="sb-player-rank">🥉 RANG #3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="sticky-top">
+
+      <!-- HEADER -->
+      <div class="header">
+        <button class="player-btn">
+          <div class="player-avatar">🦁</div>
+          <div>
+            <div class="player-name">Cyril</div>
+            <div class="player-sub">Modifier le profil</div>
+          </div>
+        </button>
+
+        <!-- SCOREBOARD STATS — style LED -->
+        <div class="scoreboard">
+          <div class="sc-cell">
+            <div class="sc-val sc-val--pts">0</div>
+            <div class="sc-lbl">Points</div>
+          </div>
+          <div class="sc-cell">
+            <div class="sc-val sc-val--won">0</div>
+            <div class="sc-lbl">Gagnés</div>
+          </div>
+          <div class="sc-cell">
+            <div class="sc-val sc-val--lost">0</div>
+            <div class="sc-lbl">Perdus</div>
+          </div>
+          <div class="sc-cell">
+            <div class="sc-val sc-val--rank">3</div>
+            <div class="sc-lbl">Rang</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FRISE -->
+      <div class="frise" style="margin-bottom:10px;">
+        <div class="frise-item" style="z-index:7"><div class="frise-step frise-step--current">Groupes</div></div>
+        <div class="frise-item" style="z-index:6"><div class="frise-step frise-step--upcoming">32e</div></div>
+        <div class="frise-item" style="z-index:5"><div class="frise-step frise-step--upcoming">16e</div></div>
+        <div class="frise-item" style="z-index:4"><div class="frise-step frise-step--upcoming">Quarts</div></div>
+        <div class="frise-item" style="z-index:3"><div class="frise-step frise-step--upcoming">Demies</div></div>
+        <div class="frise-item" style="z-index:2"><div class="frise-step frise-step--upcoming">3e pl.</div></div>
+        <div class="frise-item" style="z-index:1"><div class="frise-step frise-step--upcoming">🏆 Finale</div></div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filters">
+        <button class="filter-btn active">Tous</button>
+        <button class="filter-btn">À venir</button>
+        <button class="filter-btn">Joués</button>
+      </div>
+
+    </div><!-- /sticky-top -->
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DATE HEADER "Aujourd'hui" -->
+      <div class="date-header">
+        <div class="date-accent"></div>
+        <div class="date-text"><span>Aujourd'hui</span> — Vendredi 23 Mai</div>
+        <div class="date-line"></div>
+        <div class="date-count">0 match</div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state">
+        <div class="empty-title">Aucun match aujourd'hui</div>
+        <div class="empty-sub">on s'emmerde — revenez demain</div>
+      </div>
+
+      <!-- DATE HEADER "Demain" -->
+      <div class="date-header">
+        <div class="date-accent"></div>
+        <div class="date-text">Samedi <span>30 Mai</span></div>
+        <div class="date-line"></div>
+        <div class="date-count">1 match</div>
+      </div>
+
+      <!-- COUNTDOWN LED -->
+      <div class="countdown">
+        <div class="countdown-label">
+          <div class="countdown-dot"></div>
+          Prochain match
+        </div>
+        <div class="countdown-time">7J 2H</div>
+      </div>
+
+      <!-- MATCH CARD -->
+      <div class="match-card">
+        <div class="match-card-inner">
+          <div class="match-phase-row">
+            <div class="match-phase-badge">Groupe A · J1</div>
+            <div class="match-datetime">Sam. 30 Mai · 18:00</div>
+          </div>
+
+          <div class="match-teams">
+            <div class="team-side team-side--home">
+              <div class="team-name">PSG</div>
+              <div class="team-logo">🔵</div>
+            </div>
+            <div class="match-vs">
+              <div class="match-time">18:00</div>
+              <div class="match-sep">vs</div>
+            </div>
+            <div class="team-side team-side--away">
+              <div class="team-logo">🔴</div>
+              <div class="team-name">ARS</div>
+            </div>
+          </div>
+
+          <div class="bet-meta">
+            <div class="bet-pct-home">● PSG 75%</div>
+            <div class="bet-bar"><div class="bet-bar-home"></div></div>
+            <div class="bet-pct-away">25% ARS ●</div>
+          </div>
+
+          <div class="bet-buttons">
+            <button class="bet-btn bet-btn--active">🔵 PSG</button>
+            <button class="bet-btn">🔴 ARS</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2ème MATCH CARD (exemple non parié) -->
+      <div class="match-card">
+        <div class="match-card-inner">
+          <div class="match-phase-row">
+            <div class="match-phase-badge">Groupe B · J1</div>
+            <div class="match-datetime">Sam. 30 Mai · 21:00</div>
+          </div>
+          <div class="match-teams">
+            <div class="team-side team-side--home">
+              <div class="team-name">FRA</div>
+              <div class="team-logo">🇫🇷</div>
+            </div>
+            <div class="match-vs">
+              <div class="match-time">21:00</div>
+              <div class="match-sep">vs</div>
+            </div>
+            <div class="team-side team-side--away">
+              <div class="team-logo">🇧🇷</div>
+              <div class="team-name">BRE</div>
+            </div>
+          </div>
+          <div class="bet-meta">
+            <div class="bet-pct-home">● FRA 40%</div>
+            <div class="bet-bar" style="background:#22c55e"><div class="bet-bar-home" style="width:40%; background:#ef4444"></div></div>
+            <div class="bet-pct-away">60% BRE ●</div>
+          </div>
+          <div class="bet-buttons">
+            <button class="bet-btn">🇫🇷 FRA</button>
+            <button class="bet-btn">🇧🇷 BRE</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -83,12 +83,20 @@ export default function Nav() {
   const isActive = (path) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
-  // Count pending challenges received by the current player
+  // Count pending challenges + cancel requests that need a response from the current player
   const pendingCount = useMemo(() => {
     if (!player || !challenges) return 0
-    return Object.values(challenges).filter(
-      (c) => c.challengedId === player.pseudoId && c.status === 'pending'
-    ).length
+    return Object.values(challenges).filter((c) => {
+      // New challenge received
+      if (c.challengedId === player.pseudoId && c.status === 'pending') return true
+      // Cancel request from opponent waiting for our answer
+      if (
+        c.status === 'cancel_requested' &&
+        c.cancelRequestedBy !== player.pseudoId &&
+        (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
+      ) return true
+      return false
+    }).length
   }, [challenges, player])
 
   return (

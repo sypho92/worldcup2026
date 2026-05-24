@@ -522,30 +522,148 @@ img, svg { display: block; }
 
 /* ===== Scoreboard ===== */
 .scoreboard-list { display: flex; flex-direction: column; gap: 8px; }
-.scoreboard-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-card);
+/* ===== League table classement ===== */
+.lt-wrap {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 16px;
-  transition: border-color 0.2s;
+  overflow: hidden;
 }
-.scoreboard-row.mine { border-color: var(--accent); background: var(--accent-dim); }
-.rank {
-  font-size: 14px;
+.lt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Header */
+.lt-head th {
+  padding: 18px 20px;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 20px;
   font-weight: 800;
-  color: var(--text-muted);
-  width: 24px;
-  text-align: center;
-  flex-shrink: 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
-.rank.top { color: var(--accent); }
-.player-info { flex: 1; min-width: 0; }
-.player-info .name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-info .sub { font-size: 12px; color: var(--text-muted); }
-.player-points { font-size: 20px; font-weight: 800; color: var(--accent); }
+.lt-th-correct { color: var(--success) !important; }
+.lt-th-wrong   { color: var(--error)   !important; }
+
+/* Stats cols — séparateurs */
+.lt-col-stat,
+.lt-head .lt-col-stat {
+  border-left: 1px solid rgba(255,255,255,0.07);
+}
+.lt-col-pts,
+.lt-head .lt-col-pts {
+  border-left: 1px solid rgba(212,152,30,0.35);
+  background: rgba(212,152,30,0.04);
+}
+
+/* Rows */
+.lt-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+  position: relative;
+}
+.lt-row:last-child { border-bottom: none; }
+.lt-row:hover { background: rgba(255,255,255,0.04); }
+
+/* Bandes podium — bordure gauche colorée */
+.lt-row--gold   { box-shadow: inset 4px 0 0 #d4981e; background: rgba(212,152,30,0.06); }
+.lt-row--silver { box-shadow: inset 4px 0 0 #9ca3af; background: rgba(156,163,175,0.04); }
+.lt-row--bronze { box-shadow: inset 4px 0 0 #b45309; background: rgba(180,83,9,0.04);   }
+.lt-row--gold:hover   { background: rgba(212,152,30,0.10); }
+.lt-row--silver:hover { background: rgba(156,163,175,0.07); }
+.lt-row--bronze:hover { background: rgba(180,83,9,0.07); }
+
+/* Ligne du joueur connecté */
+.lt-row--mine {
+  box-shadow: inset 4px 0 0 var(--accent), inset 0 0 0 1px rgba(212,152,30,0.3) !important;
+  background: rgba(212,152,30,0.08) !important;
+}
+.lt-row--mine .lt-name { color: var(--accent); font-weight: 700; }
+
+/* Cells */
+.lt-row td {
+  padding: 20px 20px;
+  vertical-align: middle;
+}
+.lt-row .lt-col-pts { background: rgba(212,152,30,0.06); }
+
+/* Dimensions colonnes */
+.lt-col-rank   { width: 64px; text-align: center; }
+.lt-col-player { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.lt-col-stat   { width: 74px; text-align: center; }
+.lt-col-pct    { width: 72px; text-align: center; border-left: 1px solid rgba(255,255,255,0.07); }
+.lt-head .lt-col-pct { border-left: 1px solid rgba(255,255,255,0.07); }
+.lt-val--pct   { color: var(--accent) !important; }
+.lt-col-pts    { width: 84px; text-align: center; }
+
+/* Rang */
+.lt-rank { font-size: 22px; font-weight: 800; color: var(--text-muted); line-height: 1; }
+.lt-rank--top { font-size: 28px; }
+
+/* Nom */
+.lt-name {
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  color: var(--text-primary);
+}
+
+/* Chiffres stats */
+.lt-val {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+.lt-val--correct { color: var(--success); }
+.lt-val--wrong   { color: var(--error); }
+
+/* Points — même taille, couleur accent */
+.lt-pts {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* Tooltip en-têtes */
+.lt-th-tip { position: relative; cursor: default; }
+.lt-th-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: var(--text-primary);
+  font-family: var(--font-body, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 20;
+}
+.lt-th-tip:hover::after { opacity: 1; }
 
 /* ===== Group standings table ===== */
 .standings-table {
@@ -1269,8 +1387,6 @@ img, svg { display: block; }
 }
 
 /* ── Lueur de fond — suit la souris, reste dans la carte ── */
-/* z-index: 1 pour passer au-dessus du ::after (texture, z-index: 0)   */
-/* Premier enfant du DOM → tous les autres siblings s'affichent dessus  */
 .card-glow {
   position: absolute;
   inset: 0;
@@ -1280,14 +1396,12 @@ img, svg { display: block; }
   opacity: 0;
   transition: opacity 0.45s ease;
   background:
-    /* Noyau chaud — zone chaude concentrée sous le curseur */
     radial-gradient(
       ellipse 45% 38% at var(--mx, 50%) var(--my, 50%),
       rgba(212, 152, 30, 0.22) 0%,
       rgba(200, 130, 20, 0.08) 55%,
       transparent 100%
     ),
-    /* Halo large — chaleur ambiante qui s'étale */
     radial-gradient(
       ellipse 90% 80% at var(--mx, 50%) var(--my, 50%),
       rgba(180, 110, 15, 0.10) 0%,
@@ -1299,55 +1413,28 @@ img, svg { display: block; }
   background: var(--bg-card-2);
   border-color: rgba(240, 190, 55, 0.85);
   box-shadow:
-    /* Glow serré sur le contour */
     0 0 6px 1px rgba(240, 185, 50, 0.55),
-    /* Halo intermédiaire */
     0 0 18px 4px rgba(220, 160, 30, 0.28),
-    /* Aura large douce */
     0 0 40px 10px rgba(190, 130, 15, 0.12),
-    /* Ombres de profondeur */
     0 8px 32px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-/* Barre gauche qui s'allume au hover */
-.sched-row:hover::before {
-  background: rgba(240, 185, 50, 0.9);
-  box-shadow: 0 0 10px 3px rgba(240, 185, 50, 0.55), 0 0 22px 6px rgba(220, 160, 30, 0.25);
-}
 
-/* Texture métallique — lueurs de coin, sans stries */
+/* Pas de barre gauche */
+.sched-row::before { display: none; }
+.sched-row:hover::before { display: none; }
+
+/* Texture métallique — lueurs de coin */
 .sched-row::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: var(--radius);
   background-image:
-    /* Lueur coin haut-gauche — reflet principal compact */
-    radial-gradient(
-      ellipse 45% 35% at 8% 12%,
-      rgba(255, 245, 160, 0.18) 0%,
-      rgba(255, 230, 100, 0.08) 40%,
-      transparent 70%
-    ),
-    /* Lueur coin bas-droite — reflet opposé */
-    radial-gradient(
-      ellipse 40% 30% at 92% 88%,
-      rgba(255, 240, 130, 0.14) 0%,
-      rgba(255, 220, 80, 0.06) 40%,
-      transparent 68%
-    ),
-    /* Lueur coin haut-droite — léger */
-    radial-gradient(
-      ellipse 30% 25% at 90% 10%,
-      rgba(255, 250, 180, 0.09) 0%,
-      transparent 60%
-    ),
-    /* Lueur coin bas-gauche — léger */
-    radial-gradient(
-      ellipse 28% 22% at 10% 90%,
-      rgba(255, 235, 110, 0.07) 0%,
-      transparent 60%
-    );
+    radial-gradient(ellipse 45% 35% at 8% 12%, rgba(255, 245, 160, 0.18) 0%, rgba(255, 230, 100, 0.08) 40%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 92% 88%, rgba(255, 240, 130, 0.14) 0%, rgba(255, 220, 80, 0.06) 40%, transparent 68%),
+    radial-gradient(ellipse 30% 25% at 90% 10%, rgba(255, 250, 180, 0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 28% 22% at 10% 90%, rgba(255, 235, 110, 0.07) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1355,12 +1442,12 @@ img, svg { display: block; }
 
 .sched-row--bet::before { display: none; }
 .sched-row--bet {
-  background: rgba(212, 152, 30, 0.06);
-  border-color: rgba(212, 152, 30, 0.30);
+  background: rgba(212, 152, 30, 0.11);
+  border-color: rgba(212, 152, 30, 0.40);
 }
 .sched-row--bet:hover {
-  background: rgba(212, 152, 30, 0.09);
-  border-color: rgba(212, 152, 30, 0.45);
+  background: rgba(212, 152, 30, 0.15);
+  border-color: rgba(212, 152, 30, 0.55);
   box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 0 transparent;
 }
 
@@ -1381,6 +1468,40 @@ img, svg { display: block; }
   background: rgba(255, 48, 48, 0.03);
 }
 .sched-row--locked::before { display: none; }
+
+/* ── Carte non pronostiquée — fond sombre ── */
+.sched-row--unbet {
+  background: #0c0a18;
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.65),
+    0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.sched-row--unbet::before { display: none; }
+.sched-row--unbet .sched-teams {
+  opacity: 0.72;
+}
+.sched-row--unbet .sched-bet-btn {
+  opacity: 1;
+}
+.sched-row--unbet:hover {
+  background: #110e22;
+  border-color: rgba(240, 190, 55, 0.35);
+}
+
+/* Badge "À parier" */
+.sched-unbet-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+}
 
 /* ── LIVE badge ── */
 @keyframes live-pulse {
@@ -1534,6 +1655,58 @@ img, svg { display: block; }
   line-height: 1;
 }
 
+/* Badge "Terminé" */
+.sched-time-badge--score {
+  padding: 4px 0 0;
+  margin-bottom: 2px;
+}
+
+/* Badge minute / Mi-temps */
+.sched-time-badge--live {
+  padding: 4px 0 0;
+  margin-bottom: 2px;
+}
+
+/* Label au-dessus du score (minute / Mi-temps / Terminé) */
+.sched-badge-status {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.sched-badge-status--live {
+  color: #ff3b3b;
+  animation: minute-blink 1.2s ease-in-out infinite;
+}
+.sched-badge-status--paused {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 22px;
+}
+
+/* Score (chiffres) dans le badge live/terminé */
+.sched-badge-main {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 6px;
+}
+
+@keyframes minute-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+
 /* Ligne principale : teams centrées + résultat absolu à droite */
 .sched-main {
   position: relative;
@@ -1586,6 +1759,9 @@ img, svg { display: block; }
   letter-spacing: 3px;
   line-height: 1;
 }
+.sched-score--live {
+  color: var(--text-primary);
+}
 
 /* Résultat / LIVE — absolu à droite */
 .sched-right {
@@ -1595,9 +1771,91 @@ img, svg { display: block; }
   align-items: center;
   gap: 6px;
 }
-.sched-result-icon { font-size: 28px; font-weight: 800; }
-.sched-result-icon.correct { color: var(--success); }
-.sched-result-icon.wrong { color: var(--error); }
+/* ── Bouton déploiement carte ── */
+.sched-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% + 40px);
+  margin: 8px -20px 0;
+  padding: 7px 20px;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sched-expand-btn:hover {
+  color: var(--text-secondary);
+}
+.sched-expand-btn--open {
+  background: none;
+}
+.sched-expand-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.sched-expand-chevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+/* ── Bandeau résultat pleine largeur ── */
+.sched-result-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px -20px 0;
+  padding: 11px 20px;
+  font-family: var(--font-display);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+.sched-result-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+}
+.sched-result-banner--correct {
+  color: var(--success);
+  border-top: 1px solid rgba(34, 197, 94, 0.25);
+}
+.sched-result-banner--correct::before {
+  background: linear-gradient(90deg, transparent 0%, var(--success) 50%, transparent 100%);
+}
+.sched-result-banner--wrong {
+  color: var(--error);
+  border-top: 1px solid rgba(239, 68, 68, 0.25);
+}
+.sched-result-banner--wrong::before {
+  background: linear-gradient(90deg, transparent 0%, var(--error) 50%, transparent 100%);
+}
+.sched-result-banner--unbet {
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.sched-result-banner--unbet::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+}
+.sched-result-banner-icon {
+  font-size: 20px;
+  font-weight: 900;
+  position: relative;
+}
+.sched-result-banner-text {
+  font-size: 18px;
+  font-weight: 700;
+  position: relative;
+}
 .sched-bet-dot { color: var(--accent); font-size: 10px; }
 .sched-locked-badge {
   font-family: var(--font-display);
@@ -2871,6 +3129,31 @@ img, svg { display: block; }
 }
 .challenge-notif-accept-btn:hover { background: rgba(212, 152, 30, 0.22); border-color: var(--accent); }
 
+/* Variante notif d'annulation */
+.challenge-notif--cancel {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(148, 163, 184, 0.06) 100%);
+}
+.challenge-notif-type-badge--cancel {
+  color: var(--text-secondary);
+}
+
+/* ─── CancelRequestModal ────────────────────────────────────────────────────── */
+.cancel-modal-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 10px 0 4px;
+}
+.cancel-modal-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 8px 0 16px;
+  line-height: 1.5;
+}
+
 /* ─── LoginPage — Existing players quick-connect ─────────────────────────────── */
 .login-existing {
   margin-top: 24px;
@@ -3389,6 +3672,7 @@ img, svg { display: block; }
 .challenge-card--gold     { border-color: rgba(212, 152, 30, 0.55); }
 .challenge-card--error    { border-color: rgba(239, 68, 68, 0.45); }
 .challenge-card--success  { border-color: rgba(34, 197, 94, 0.4); }
+.challenge-card--muted    { border-color: rgba(255, 255, 255, 0.10); }
 
 .challenge-card-header {
   display: flex;
@@ -3580,6 +3864,10 @@ img, svg { display: block; }
   background: var(--success-dim);
   border: 1px solid rgba(34,197,94,0.3);
 }
+.challenge-card-outcome--null {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+}
 .challenge-outcome-headline {
   font-family: var(--font-display);
   font-size: 18px;
@@ -3589,6 +3877,7 @@ img, svg { display: block; }
 }
 .challenge-card-outcome--lost .challenge-outcome-headline { color: var(--error); }
 .challenge-card-outcome--won  .challenge-outcome-headline { color: var(--success); }
+.challenge-card-outcome--null .challenge-outcome-headline { color: var(--text-secondary); }
 .challenge-outcome-gage {
   font-size: 15px;
   font-weight: 600;
@@ -3615,6 +3904,207 @@ img, svg { display: block; }
   border-top: 1px solid rgba(255,255,255,0.07);
   width: 100%;
 }
+
+/* ─── Challenge card — annulation ───────────────────────────────────────────── */
+.challenge-card--cancel {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.03);
+}
+
+/* "Annuler le défi" — petit bouton dans le footer actif */
+.challenge-card-active-footer { justify-content: space-between; }
+.challenge-card-cancel-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.challenge-card-cancel-btn:hover {
+  color: var(--error);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* J'ai demandé l'annulation — en attente */
+.challenge-card-cancel-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(148, 163, 184, 0.06);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+.challenge-card-cancel-pending-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.challenge-card-cancel-withdraw {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.challenge-card-cancel-withdraw:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* L'adversaire a demandé l'annulation */
+.challenge-card-cancel-incoming {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.06);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+}
+.challenge-card-cancel-incoming-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ─── Bandeau défi verrouillé — clone exact de sched-result-banner en or ─────── */
+.sched-challenge-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px -20px 0;
+  padding: 11px 20px;
+  font-family: var(--font-display);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  color: var(--accent);
+  border-top: 1px solid rgba(212, 152, 30, 0.28);
+}
+.sched-challenge-lock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(212, 152, 30, 0.18) 50%, transparent 100%);
+  pointer-events: none;
+}
+.sched-challenge-lock--pending {
+  color: var(--text-muted);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.sched-challenge-lock--pending::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+}
+/* L'adversaire demande l'annulation */
+.sched-challenge-lock--incoming {
+  color: var(--text-secondary);
+  border-top-color: rgba(239, 68, 68, 0.25);
+}
+.sched-challenge-lock--incoming::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.10) 50%, transparent 100%);
+}
+
+.sched-challenge-lock-icon {
+  font-size: 20px;
+  font-weight: 900;
+  position: relative;
+}
+.sched-challenge-lock-text {
+  font-size: 18px;
+  font-weight: 700;
+  position: relative;
+}
+
+/* Bouton annulation — positionné à droite, hors du flux centré */
+.sched-challenge-lock-cancel-btn {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-body, sans-serif);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+  white-space: nowrap;
+}
+.sched-challenge-lock-cancel-btn:hover {
+  color: var(--error);
+  border-color: rgba(239, 68, 68, 0.65);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Boutons Refuser / Accepter côté carte match */
+.sched-challenge-lock-actions {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 6px;
+}
+.sched-challenge-lock-refuse-btn,
+.sched-challenge-lock-accept-btn {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-body, sans-serif);
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.sched-challenge-lock-refuse-btn {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.sched-challenge-lock-refuse-btn:hover {
+  color: var(--error);
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.08);
+}
+.sched-challenge-lock-accept-btn {
+  color: #000;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.sched-challenge-lock-accept-btn:hover {
+  background: #f0c040;
+  border-color: #f0c040;
+}
+
+/* Carte sans pari mais défi en cours */
+.sched-row--challenge-locked {
+  border-color: rgba(212, 152, 30, 0.25);
+  background: rgba(212, 152, 30, 0.04);
+}
+.sched-row--challenge-locked::before { display: none; }
 
 /* ─── Admin: main tabs (Résultats / Joueurs) ─────────────────────────────────── */
 .admin-main-tabs {

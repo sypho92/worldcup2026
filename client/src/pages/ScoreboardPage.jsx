@@ -139,33 +139,62 @@ export default function ScoreboardPage() {
         />
       )}
 
-      {/* Player scoreboard */}
-      <div className="scoreboard-list mb-24">
+      {/* League table */}
+      <div className="lt-wrap mb-24">
         {board.length === 0 ? (
           <div className="empty-state">
             <div className="icon">🏆</div>
             <p>Aucun joueur pour l'instant.</p>
           </div>
         ) : (
-          board.map((p, i) => (
-            <div
-              key={p.pseudoId}
-              className={`scoreboard-row ${p.pseudoId === player?.pseudoId ? 'mine' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setViewedPlayerId(p.pseudoId)}
-            >
-              <span className={`rank ${i < 3 ? 'top' : ''}`}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-              </span>
-              <AvatarDisplay avatar={p.avatar} size={32} />
-              <div className="player-info">
-                <div className="name">{p.name}</div>
-                <div className="sub">{p.correctBets} bon{p.correctBets !== 1 ? 's' : ''} pronostic{p.correctBets !== 1 ? 's' : ''}</div>
-                <PerPhaseAccordion pseudoId={p.pseudoId} />
-              </div>
-              <span className="player-points">{p.points}</span>
-            </div>
-          ))
+          <table className="lt-table">
+            <thead>
+              <tr className="lt-head">
+                <th className="lt-col-rank">#</th>
+                <th className="lt-col-player">Joueur</th>
+                <th className="lt-col-stat lt-th-tip" data-tip="Paris joués">J</th>
+                <th className="lt-col-stat lt-th-correct lt-th-tip" data-tip="Paris gagnés">G</th>
+                <th className="lt-col-stat lt-th-wrong lt-th-tip" data-tip="Paris perdus">P</th>
+                <th className="lt-col-pct lt-th-tip" data-tip="Taux de réussite">%</th>
+                <th className="lt-col-pts lt-th-tip" data-tip="Points marqués">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {board.map((p, i) => {
+                const played = p.correctBets + p.wrongBets
+                const pct = played > 0 ? Math.round((p.correctBets / played) * 100) : 0
+                const isMine = p.pseudoId === player?.pseudoId
+                return (
+                  <tr
+                    key={p.pseudoId}
+                    className={[
+                      'lt-row',
+                      isMine ? 'lt-row--mine' : '',
+                      i === 0 ? 'lt-row--gold' : i === 1 ? 'lt-row--silver' : i === 2 ? 'lt-row--bronze' : ''
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => setViewedPlayerId(p.pseudoId)}
+                  >
+                    <td className="lt-col-rank">
+                      <span className={`lt-rank ${i < 3 ? 'lt-rank--top' : ''}`}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                      </span>
+                    </td>
+                    <td className="lt-col-player">
+                      <AvatarDisplay avatar={p.avatar} size={46} />
+                      <span className="lt-name">{p.name}</span>
+                    </td>
+                    <td className="lt-col-stat lt-val">{played}</td>
+                    <td className="lt-col-stat lt-val lt-val--correct">{p.correctBets}</td>
+                    <td className="lt-col-stat lt-val lt-val--wrong">{p.wrongBets}</td>
+                    <td className="lt-col-pct lt-val lt-val--pct">{pct}%</td>
+                    <td className="lt-col-pts">
+                      <span className="lt-pts">{p.points}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
