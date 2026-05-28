@@ -1,8 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import { resizeImageToBase64 } from '../utils/image'
 import ScheduleRow from '../components/ScheduleRow'
+
+const WC_START = new Date('2026-06-11T19:00:00Z')
 
 const AVATARS = ['⚽', '🏆', '🦁', '🦅', '🐺', '🦊', '🐯', '🦋', '🌟', '🔥', '⚡', '🎯']
 
@@ -19,6 +22,7 @@ const COMP_STAGES = [
 
 function CompetitionStepper({ results }) {
   const { matches } = useApp()
+  const navigate = useNavigate()
   const statuses = COMP_STAGES.map((s) => {
     const stageMatches = matches.filter((m) => m.phase === s.key)
     if (stageMatches.length === 0) return { ...s, st: 'upcoming' }
@@ -37,7 +41,12 @@ function CompetitionStepper({ results }) {
   return (
     <div className="comp-frise">
       {statuses.map((s, i) => (
-        <div key={s.key} className="comp-frise-item" style={{ zIndex: statuses.length - i }}>
+        <div
+          key={s.key}
+          className={`comp-frise-item comp-frise-item--${s.st}`}
+          style={{ zIndex: statuses.length - i }}
+          style={{ zIndex: statuses.length - i }}
+        >
           <div className={`comp-frise-step comp-frise-step--${s.st}`}>
             {s.st === 'done' && <span className="comp-frise-check">✓</span>}
             <span className="comp-frise-label">{s.short}</span>
@@ -288,6 +297,17 @@ export default function HomePage() {
   const nextUpcomingRef = useRef(null)
   const scrolledRef = useRef(false)
 
+  const wc = useMemo(() => {
+    const diff = WC_START - new Date()
+    if (diff <= 0) return { started: true, days: 0, hours: 0, mins: 0 }
+    return {
+      started: false,
+      days:  Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      mins:  Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    }
+  }, [])
+
   const rank = useMemo(() => {
     const board = scoreboard()
     const idx = board.findIndex((p) => p.pseudoId === player?.pseudoId)
@@ -340,6 +360,23 @@ export default function HomePage() {
 
       {/* ── En-tête sticky ── */}
       <div className="sched-sticky-top" ref={stickyRef}>
+
+        {/* Countdown pill */}
+        <div className="wc-pill-row">
+          <div className="wc-pill">
+            <img src="/wc-logo.png.png" alt="WC 2026" className="wc-pill-logo" />
+            <span className="wc-pill-title">Coupe du Monde FIFA 26</span>
+            <span className="wc-pill-div" />
+            {wc.started ? (
+              <span className="wc-pill-count wc-pill-count--live">En cours !</span>
+            ) : (
+              <span className="wc-pill-count">
+                J<span className="wc-pill-minus">−</span>{wc.days}
+                <span className="wc-pill-sub">{String(wc.hours).padStart(2,'0')}h{String(wc.mins).padStart(2,'0')}m</span>
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Logo mobile uniquement */}
         <div className="sched-mobile-logo">

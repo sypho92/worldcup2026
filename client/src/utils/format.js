@@ -15,38 +15,42 @@ export function abbrev(nameOrTeam) {
 
 export function getPhaseLabel(phase) {
   const labels = {
-    demo: 'Match de gala',
+    demo:     'Match de gala',
     cl_final: 'Finale Ligue des Champions',
-    liga: 'La Liga',
-    group: 'Phase de groupes',
-    r32: 'Huitièmes de finale',
-    r16: 'Huitièmes',
-    qf: 'Quarts de finale',
-    sf: 'Demi-finales',
-    third: 'Match pour la 3e place',
-    final: 'Finale',
+    liga:     'La Liga',
+    pl:       'Premier League',
+    test:     'Match test',
+    group:    'Phase de groupes',
+    r32:      'Huitièmes de finale',
+    r16:      'Huitièmes',
+    qf:       'Quarts de finale',
+    sf:       'Demi-finales',
+    third:    'Match pour la 3e place',
+    final:    'Finale',
   }
   return labels[phase] || phase
 }
 
 export function getPhaseBadgeColor(phase) {
   const colors = {
-    demo: '#888',
+    demo:     '#888',
     cl_final: '#1a56db',
-    liga: '#e11d48',
-    group: '#4f8ef7',
-    r32: '#9b59b6',
-    r16: '#8e44ad',
-    qf: '#e67e22',
-    sf: '#e74c3c',
-    third: '#16a085',
-    final: '#f0b429',
+    liga:     '#e11d48',
+    pl:       '#3d195b',
+    test:     '#888',
+    group:    '#4f8ef7',
+    r32:      '#9b59b6',
+    r16:      '#8e44ad',
+    qf:       '#e67e22',
+    sf:       '#e74c3c',
+    third:    '#16a085',
+    final:    '#f0b429',
   }
   return colors[phase] || '#888'
 }
 
 export function getPointsForPhase(phase) {
-  const pts = { group: 1, demo: 1, liga: 1, cl_final: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }
+  const pts = { group: 1, demo: 1, liga: 1, pl: 1, test: 1, cl_final: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }
   return pts[phase] ?? 1
 }
 

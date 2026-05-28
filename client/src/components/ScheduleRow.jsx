@@ -10,6 +10,43 @@ import { abbrev } from '../utils/format'
 
 export { abbrev }  // re-export so existing imports don't break
 
+// ─── Buteurs ──────────────────────────────────────────────────────────────────
+function GoalsList({ goals }) {
+  if (!goals || !Array.isArray(goals) || goals.length === 0) return null
+
+  const sorted = [...goals].sort((a, b) => {
+    const ma = (a.minute ?? 999) * 10 + (a.minuteExtra ?? 0)
+    const mb = (b.minute ?? 999) * 10 + (b.minuteExtra ?? 0)
+    return ma - mb
+  })
+
+  return (
+    <div className="sched-goals">
+      <div className="sched-goals-header">⚽ Buteurs</div>
+      {sorted.map((g, i) => {
+        const isHome     = g.side === 'home'
+        const isOG       = g.type === 'OWN_GOAL'
+        const isPen      = g.type === 'PENALTY'
+        const minLabel   = g.minuteExtra ? `${g.minute}+${g.minuteExtra}'` : `${g.minute ?? '?'}'`
+        const scorerText = [g.scorer || '?', isOG && '(csc)', isPen && '(p.)'].filter(Boolean).join(' ')
+        const icon       = isOG ? '🏳️' : '⚽'
+
+        return (
+          <div key={i} className={`sched-goal-line${isOG ? ' sched-goal-line--og' : ''}`}>
+            <span className="sched-goal-home">
+              {isHome && <>{scorerText}&nbsp;<span className="sched-goal-ball">{icon}</span></>}
+            </span>
+            <span className="sched-goal-min">{minLabel}</span>
+            <span className="sched-goal-away">
+              {!isHome && <><span className="sched-goal-ball">{icon}</span>&nbsp;{scorerText}</>}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const MAX_AVATARS = 5
 
 function BetBar({ match, onPlayerClick, onChallengeClick }) {
@@ -215,25 +252,33 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
   }, [isLive])
 
   const displayMinute = useMemo(() => {
-    if (!isLive || match.status === 'PAUSED') return null
-    // Priorité : minute fournie par l'API
-    if (match.minute != null) return match.minute
+    if (!isLive) return null
     if (!match.utcDate) return null
 
-    const elapsed = Math.max(0, Math.floor((now - new Date(match.utcDate).getTime()) / 60000))
-
-    // 2ème mi-temps — heure exacte enregistrée par le serveur
+    // 2ème mi-temps — coup d'envoi exact enregistré par le serveur (PAUSED → IN_PLAY)
     if (match.secondHalfKickoff) {
       const elapsed2 = Math.max(0, Math.floor((now - match.secondHalfKickoff) / 60000))
       return Math.min(90, 45 + elapsed2)
     }
 
-    // 2ème mi-temps détectée par le temps écoulé (>60 min depuis utcDate)
-    if (elapsed > 60) return Math.min(90, Math.max(46, elapsed - 15))
+    // Calcul depuis l'horloge client :
+    //   1. firstHalfKickoff = timestamp enregistré par le serveur à la première détection IN_PLAY
+    //      → précision ±1 min (intervalle de sync) — indépendant du délai API
+    //   2. fallback : utcDate (heure officielle programmée) — peut dériver si le match
+    //      commence en avance / en retard par rapport à l'heure officielle
+    const kickoffMs = match.firstHalfKickoff || new Date(match.utcDate).getTime()
+    const elapsed   = Math.max(0, Math.floor((now - kickoffMs) / 60000))
 
-    // 1ère mi-temps
+    // Mi-temps API confirmée ET < 63 min écoulées → vrai mi-temps
+    if (match.status === 'PAUSED' && elapsed <= 63) return null
+
+    // 2ème mi-temps estimée (pas de secondHalfKickoff encore) : > 63 min depuis le coup d'envoi
+    // (45 min 1ère mi-temps + ~18 min de pause = ~63 min)
+    if (elapsed > 63) return Math.min(90, Math.max(46, elapsed - 18))
+
+    // 1ère mi-temps — calculé en temps réel
     return Math.min(45, Math.max(1, elapsed))
-  }, [isLive, match.status, match.minute, match.utcDate, match.secondHalfKickoff, now])
+  }, [isLive, match.status, match.utcDate, match.firstHalfKickoff, match.secondHalfKickoff, now])
 
   // Score en direct depuis l'API
   const liveHome = match.score?.fullTime?.home ?? match.score?.halfTime?.home ?? null
@@ -265,14 +310,16 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         <div className="sched-time-badge sched-time-badge--score">
           <span className="sched-badge-status">Terminé</span>
         </div>
-      ) : match.status === 'PAUSED' ? (
+      ) : isLive && displayMinute === null ? (
+        // Mi-temps confirmée ET client estime qu'elle n'est pas encore terminée
         <div className="sched-time-badge sched-time-badge--live">
           <span className="sched-badge-status sched-badge-status--paused">Mi-temps</span>
         </div>
       ) : isLive ? (
+        // En cours ou PAUSED mais >63 min écoulées → on estime que la 2e mi-temps a repris
         <div className="sched-time-badge sched-time-badge--live">
           <span className="sched-badge-status sched-badge-status--live">
-            {displayMinute != null ? `${displayMinute}'` : '?'}
+            {`${displayMinute}'`}
           </span>
         </div>
       ) : !locked ? (
@@ -379,6 +426,9 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         </div>
       )}
 
+      {/* Buteurs — toujours visibles pour les matchs en cours */}
+      {isLive && <GoalsList goals={match.goals} />}
+
       {/* Toggle déploiement — bouton AVANT le contenu pour que ça s'ouvre vers le bas */}
       {finished && (
         <button
@@ -392,11 +442,15 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         </button>
       )}
 
-      {/* BetBar :
-            - match à venir → toujours visible
+      {/* BetBar + buteurs :
+            - match à venir → toujours visible (pas de buts)
+            - match en cours → BetBar visible, buteurs déjà affichés au-dessus
             - match terminé → déployable en dessous du bouton */}
       {(!finished || expanded) && (
-        <BetBar match={match} onPlayerClick={setViewedPlayerId} onChallengeClick={setChallengedId} />
+        <>
+          {finished && <GoalsList goals={match.goals} />}
+          <BetBar match={match} onPlayerClick={setViewedPlayerId} onChallengeClick={setChallengedId} />
+        </>
       )}
 
       {!finished && !locked && (

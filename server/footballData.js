@@ -23,6 +23,14 @@ async function fetchMatches(competitionId, params = {}) {
   return data.matches || []
 }
 
+/** Détail complet d'un match (inclut les buteurs) */
+async function fetchMatchDetail(fdId) {
+  const url = `${API_BASE}/matches/${fdId}`
+  const res = await fetch(url, { headers: getHeaders() })
+  if (!res.ok) throw new Error(`football-data ${res.status}: ${url}`)
+  return res.json()
+}
+
 function normalizeWinner(winner) {
   if (winner === 'HOME_TEAM') return 'home'
   if (winner === 'AWAY_TEAM') return 'away'
@@ -38,10 +46,17 @@ function mapMatch(apiMatch, matchId, phase) {
   const homeScore = apiMatch.score?.fullTime?.home ?? null
   const awayScore = apiMatch.score?.fullTime?.away ?? null
 
+  // Calcul date/heure locale (Europe/Paris) depuis utcDate
+  const d = new Date(apiMatch.utcDate)
+  const date = d.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+  const time = d.toLocaleTimeString('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false })
+
   return {
     id: matchId,
     fdId: apiMatch.id,
     utcDate: apiMatch.utcDate,
+    date,
+    time,
     status: apiMatch.status,
     minute: apiMatch.minute ?? null,
     phase: resolvedPhase,
@@ -67,10 +82,32 @@ function mapMatch(apiMatch, matchId, phase) {
         away: apiMatch.score?.halfTime?.away ?? null,
       },
     },
-    result: winner !== null ? { homeScore, awayScore, winner } : null,
-    goals: [],
+    result: apiMatch.status === 'FINISHED' && winner !== null ? { homeScore, awayScore, winner } : null,
+    goals: mapGoals(apiMatch.goals, apiMatch.homeTeam?.id, apiMatch.awayTeam?.id),
     manualOverride: false,
   }
 }
 
-module.exports = { fetchMatches, mapMatch, normalizeWinner, STAGE_TO_PHASE }
+/**
+ * Normalise le tableau goals de l'API football-data.org.
+ * side : 'home' | 'away' — indique quelle équipe bénéficie du but.
+ * Pour les buts contre son camp le scorer appartient à l'équipe adverse,
+ * mais team.id dans l'API représente l'équipe qui MARQUE (pas qui encaisse).
+ */
+function mapGoals(apiGoals, homeTeamId, awayTeamId) {
+  if (!apiGoals || !Array.isArray(apiGoals)) return []
+  return apiGoals
+    .filter((g) => g && g.scorer)
+    .map((g) => ({
+      minute:      g.minute ?? null,
+      minuteExtra: g.injuryTime ?? null,
+      type:        g.type || 'REGULAR',           // REGULAR | OWN_GOAL | PENALTY
+      scorer:      g.scorer?.shortName || g.scorer?.name || null,
+      assist:      g.assist?.shortName  || g.assist?.name  || null,
+      side:
+        g.team?.id === homeTeamId ? 'home' :
+        g.team?.id === awayTeamId ? 'away' : null,
+    }))
+}
+
+module.exports = { fetchMatches, fetchMatchDetail, mapMatch, mapGoals, normalizeWinner, STAGE_TO_PHASE }
