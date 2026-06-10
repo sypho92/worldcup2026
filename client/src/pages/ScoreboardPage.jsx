@@ -5,6 +5,11 @@ import Flag from '../components/Flag'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import PlayerProfileModal from '../components/PlayerProfileModal'
 
+const formatPlayerName = (name) => {
+  const n = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
+  return n.length > 9 ? n.slice(0, 9) + '…' : n
+}
+
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
   { key: 'r32', label: '32e de finale' },
@@ -181,7 +186,7 @@ export default function ScoreboardPage() {
                     </td>
                     <td className="lt-col-player">
                       <AvatarDisplay avatar={p.avatar} size={38} />
-                      <span className="lt-name">{p.name}</span>
+                      <span className="lt-name">{formatPlayerName(p.name)}</span>
                     </td>
                     <td className="lt-col-stat lt-val">{played}</td>
                     <td className="lt-col-stat lt-val lt-val--correct">{p.correctBets}</td>

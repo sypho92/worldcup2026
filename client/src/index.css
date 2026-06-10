@@ -727,8 +727,8 @@ img, svg { display: block; }
   .lt-col-player      { gap: 10px; }
   .lt-rank            { font-size: 16px; }
   .lt-rank--top       { font-size: 22px; }
-  .lt-name            { font-size: 15px; }
-  .lt-val             { font-size: 15px; }
+  .lt-name            { font-size: 11px; }
+  .lt-val             { font-size: 11px; }
   .lt-pts             { font-size: 22px; }
   .lt-head th         { font-size: 11px; padding: 10px 6px; letter-spacing: 0.6px; }
 }
