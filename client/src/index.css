@@ -787,6 +787,12 @@ img, svg { display: block; }
 .standings-table .qualified { background: rgba(34, 197, 94, 0.06); }
 .standings-table .lots { color: var(--error); font-size: 10px; margin-left: 4px; }
 
+/* Compact dans la modal groupe */
+.modal-card .standings-table { font-size: 11px; }
+.modal-card .standings-table th { padding: 4px 5px; font-size: 9px; }
+.modal-card .standings-table td { padding: 5px 5px; }
+.modal-card .standings-table .team-cell { gap: 5px; }
+
 /* ===== Filter tabs ===== */
 .filter-tabs {
   display: flex;
@@ -2507,11 +2513,10 @@ img, svg { display: block; }
 /* Groups grid */
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 20px;
 }
-@media (min-width: 640px) { .groups-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
 .group-card {
   background: var(--bg-card);

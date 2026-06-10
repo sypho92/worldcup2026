@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { computeGroupStandings } from '../utils/standings'
-import MatchCard from '../components/MatchCard'
 import Flag from '../components/Flag'
 
 // ─── Couleurs distinctes par groupe ───────────────────────────────────────────
@@ -84,64 +83,51 @@ function GroupDetail({ groupId, onClose }) {
   )
 
   return (
-    <div className="group-detail" style={{ borderColor: color }}>
-      <div className="group-detail-header">
-        <h3 style={{ color }}>Groupe {groupId}</h3>
-        <button className="group-detail-close" onClick={onClose}>✕</button>
-      </div>
-
-      <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-        <table className="standings-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Équipe</th>
-              <th>J</th><th>G</th><th>N</th><th>P</th>
-              <th>Bp</th><th>Bc</th><th>Diff</th><th>Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {standings.map((row, i) => (
-              <tr key={row.team.name} className={i < 2 ? 'qualified' : ''}>
-                <td>
-                  {i + 1}
-                  {row.requiresDrawingOfLots && <span className="lots" title="Tirage requis"> ⚠</span>}
-                </td>
-                <td>
-                  <div className="team-cell">
-                    <Flag flag={row.team.flag} size={16} />
-                    <span>{row.team.name}</span>
-                  </div>
-                </td>
-                <td>{row.played}</td>
-                <td>{row.won}</td>
-                <td>{row.drawn}</td>
-                <td>{row.lost}</td>
-                <td>{row.gf}</td>
-                <td>{row.ga}</td>
-                <td style={{ color: row.gd > 0 ? 'var(--success)' : row.gd < 0 ? 'var(--error)' : '' }}>
-                  {row.gd > 0 ? '+' : ''}{row.gd}
-                </td>
-                <td className="pts-cell">{row.pts}</td>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" style={{ maxWidth: 480, borderTop: `3px solid ${color}` }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title" style={{ color }}>Groupe {groupId}</span>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Équipe</th>
+                <th>J</th><th>G</th><th>N</th><th>P</th>
+                <th>Bp</th><th>Bc</th><th>Diff</th><th>Pts</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {standings.map((row, i) => (
+                <tr key={row.team.name} className={i < 2 ? 'qualified' : ''}>
+                  <td>
+                    {i + 1}
+                    {row.requiresDrawingOfLots && <span className="lots" title="Tirage requis"> ⚠</span>}
+                  </td>
+                  <td>
+                    <div className="team-cell">
+                      <Flag flag={row.team.flag} size={16} />
+                      <span>{row.team.name}</span>
+                    </div>
+                  </td>
+                  <td>{row.played}</td>
+                  <td>{row.won}</td>
+                  <td>{row.drawn}</td>
+                  <td>{row.lost}</td>
+                  <td>{row.gf}</td>
+                  <td>{row.ga}</td>
+                  <td style={{ color: row.gd > 0 ? 'var(--success)' : row.gd < 0 ? 'var(--error)' : '' }}>
+                    {row.gd > 0 ? '+' : ''}{row.gd}
+                  </td>
+                  <td className="pts-cell">{row.pts}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      {[1, 2, 3].map((md) => {
-        const mdMatches = groupMatches.filter((m) => m.matchday === md)
-        return (
-          <div key={md} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>
-              Journée {md}
-            </div>
-            <div className="match-list">
-              {mdMatches.map((m) => <MatchCard key={m.id} match={m} showBets />)}
-            </div>
-          </div>
-        )
-      })}
     </div>
   )
 }
