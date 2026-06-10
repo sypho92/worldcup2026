@@ -29,7 +29,10 @@
 
 /* ===== Reset ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+html {
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
 body {
   font-family: var(--font-body);
   background: var(--bg-primary);
@@ -37,9 +40,10 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%; /* empêche iOS de redimensionner le texte */
 }
-button { cursor: pointer; font-family: inherit; border: none; outline: none; }
-input { font-family: inherit; }
+button { cursor: pointer; font-family: inherit; border: none; outline: none; touch-action: manipulation; }
+input { font-family: inherit; font-size: 16px; } /* 16px = pas de zoom auto iOS */
 a { text-decoration: none; color: inherit; }
 img, svg { display: block; }
 
@@ -47,6 +51,7 @@ img, svg { display: block; }
 .app-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 .sidebar {
@@ -122,6 +127,8 @@ img, svg { display: block; }
 
 .main-content {
   flex: 1;
+  min-width: 0;
+  width: 0; /* force le flex child à ne pas dépasser son conteneur */
   padding-bottom: calc(var(--nav-height-mobile) + 16px);
   min-height: 100vh;
 }
@@ -549,7 +556,7 @@ img, svg { display: block; }
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 11px 14px;
-  font-size: 15px;
+  font-size: 16px; /* 16px min pour éviter le zoom auto iOS */
   color: var(--text-primary);
   transition: border-color 0.2s;
   outline: none;
@@ -1165,11 +1172,15 @@ img, svg { display: block; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
-  gap: 12px;
+  padding: 12px 14px 10px;
+  gap: 8px;
   max-width: 1160px;
   margin: 0 auto;
   width: 100%;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .sched-header { padding: 20px 0 16px; gap: 12px; }
 }
 @media (min-width: 768px) { .sched-header { padding: 20px 0 16px; } }
 
@@ -1199,7 +1210,7 @@ img, svg { display: block; }
 .sched-stats {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   background: linear-gradient(135deg, rgba(212, 152, 30, 0.10) 0%, rgba(212, 152, 30, 0.04) 100%);
   border: 1px solid rgba(212, 152, 30, 0.38);
   border-radius: var(--radius);
@@ -1220,12 +1231,18 @@ img, svg { display: block; }
   height: 1px;
   background: linear-gradient(to right, transparent, rgba(212, 152, 30, 0.7), transparent);
 }
-.sched-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 40px; }
-.sched-stat-val { font-family: var(--font-display); font-size: 38px; font-weight: 600; color: var(--accent); line-height: 1; letter-spacing: 1px; }
+.sched-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.sched-stat-val { font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1; letter-spacing: 0.5px; }
 .sched-stat-val--correct { color: var(--success); }
 .sched-stat-val--wrong { color: var(--error); }
-.sched-stat-lbl { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-body); white-space: nowrap; }
-.sched-stat-div { width: 1px; height: 36px; background: rgba(212, 152, 30, 0.22); flex-shrink: 0; }
+.sched-stat-lbl { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; font-family: var(--font-body); white-space: nowrap; }
+.sched-stat-div { width: 1px; height: 28px; background: rgba(212, 152, 30, 0.22); flex-shrink: 0; }
+@media (min-width: 768px) {
+  .sched-stat-val { font-size: 38px; }
+  .sched-stat-lbl { font-size: 12px; letter-spacing: 1px; }
+  .sched-stat-div { height: 36px; }
+  .sched-stats { gap: 12px; }
+}
 
 /* ── Competition frise ── */
 .comp-frise {

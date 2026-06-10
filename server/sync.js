@@ -1,18 +1,9 @@
 const { db } = require('./firebase')
 const { fetchMatches, fetchMatchDetail, mapGoals, normalizeWinner } = require('./footballData')
-const { fetchFixturesByDate, fetchFixtureLive, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
+const { fetchFixturesByDate, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
 
 const COMPETITIONS = [
   { id: 2000, label: 'WC2026', params: () => ({ season: '2026' }) },
-  // PL + Liga : uniquement les matchs du jour pour ne pas tirer toute la saison
-  { id: 2021, label: 'PL', params: () => {
-    const today = new Date().toISOString().slice(0, 10)
-    return { dateFrom: today, dateTo: today }
-  }},
-  { id: 2014, label: 'Liga', params: () => {
-    const today = new Date().toISOString().slice(0, 10)
-    return { dateFrom: today, dateTo: today }
-  }},
 ]
 
 const POLL_LIVE_MS  = 1 * 60 * 1000    // 1 min when live or kickoff imminent
@@ -233,95 +224,6 @@ async function drainGoalsQueue(aflIds) {
   }
 }
 
-/**
- * Sync matches that have an aflId but no fdId (ex: barrage Ligue 1).
- * Polls AFL directly for status, score, minute, and goals.
- */
-async function syncAflOnly(overrides, prevStatuses, prevScores, firstHalfKickoffs, secondHalfKickoffs) {
-  if (!process.env.AFL_API_KEY) return false
-  const snap = await db.ref('matches').get()
-  if (!snap.exists()) return false
-
-  let hasLive = false
-
-  const aflOnlyMatches = Object.entries(snap.val())
-    .filter(([, m]) => m.aflId && !m.fdId)
-
-  for (const [matchId, m] of aflOnlyMatches) {
-    if (overrides[matchId]) continue
-
-    let live
-    try {
-      live = await fetchFixtureLive(m.aflId)
-    } catch (err) {
-      console.error(`[afl-only] ${matchId}: ${err.message}`)
-      await sleep(500)
-      continue
-    }
-    if (!live) continue
-
-    if (live.status === 'IN_PLAY' || live.status === 'PAUSED') hasLive = true
-
-    const updates = {
-      status: live.status,
-      minute: live.elapsed ?? null,
-      'score/winner': live.winner,
-      'score/duration': 'REGULAR',
-      'score/fullTime/home': live.homeScore,
-      'score/fullTime/away': live.awayScore,
-    }
-
-    if (live.status === 'FINISHED' && live.winner !== null) {
-      updates.result = { homeScore: live.homeScore, awayScore: live.awayScore, winner: live.winner }
-    }
-
-    // Kickoff 1ère mi-temps
-    const wasNotLive = !['IN_PLAY', 'PAUSED'].includes(prevStatuses[matchId])
-    if (live.status === 'IN_PLAY' && wasNotLive && !firstHalfKickoffs[matchId]) {
-      updates.firstHalfKickoff = Date.now()
-      firstHalfKickoffs[matchId] = updates.firstHalfKickoff
-      console.log(`[afl-only] 1st half kickoff recorded for ${matchId}`)
-    }
-
-    // Kickoff 2ème mi-temps
-    if (live.status === 'IN_PLAY' && prevStatuses[matchId] === 'PAUSED' && !secondHalfKickoffs[matchId]) {
-      updates.secondHalfKickoff = Date.now()
-      secondHalfKickoffs[matchId] = updates.secondHalfKickoff
-      console.log(`[afl-only] 2nd half kickoff recorded for ${matchId}`)
-    }
-
-    // Récupération 2H si redémarrage en cours de 2e mi-temps
-    if (live.status === 'IN_PLAY' && !secondHalfKickoffs[matchId] && (live.elapsed ?? 0) > 45) {
-      updates.secondHalfKickoff = Date.now() - (live.elapsed - 45) * 60 * 1000
-      secondHalfKickoffs[matchId] = updates.secondHalfKickoff
-      console.log(`[afl-only] 2nd half kickoff RECOVERED for ${matchId}`)
-    }
-
-    await db.ref(`matches/${matchId}`).update(updates)
-
-    // Buts : si score changé ou match terminé
-    const prev = prevScores[matchId] || { home: null, away: null }
-    const scoreChanged = live.homeScore !== prev.home || live.awayScore !== prev.away
-    const justFinished = live.status === 'FINISHED' && prevStatuses[matchId] !== 'FINISHED'
-    if ((scoreChanged || justFinished) && live.homeScore !== null) {
-      try {
-        const events = await fetchFixtureEvents(m.aflId)
-        const goals  = mapAflGoals(events, m.aflHomeId, m.aflAwayId)
-        await db.ref(`matches/${matchId}/goals`).set(goals.length > 0 ? goals : null)
-        console.log(`[afl-only] ${matchId}: ${goals.length} but(s) mis à jour`)
-      } catch (err) {
-        console.warn(`[afl-only] goals ${matchId}: ${err.message}`)
-      }
-      await sleep(1000)
-    }
-
-    console.log(`[afl-only] ${matchId}: ${live.status} ${live.homeScore ?? '-'}:${live.awayScore ?? '-'} (${live.elapsed ?? '?'}')`)
-    await sleep(500)
-  }
-
-  return hasLive
-}
-
 async function syncOnce(fdIndex) {
   const { overrides, prevStatuses, prevScores, aflIds, firstHalfKickoffs, secondHalfKickoffs, nearestKickoffMs } = await refreshMatchState()
   let hasLive = false
@@ -339,14 +241,6 @@ async function syncOnce(fdIndex) {
   // Vide la file des buts (déclenché uniquement si score a changé)
   if (_goalsQueue.size > 0) {
     drainGoalsQueue(aflIds).catch((err) => console.error('[goals] drain error:', err.message))
-  }
-
-  // Sync matchs AFL-only (sans fdId)
-  try {
-    const aflLive = await syncAflOnly(overrides, prevStatuses, prevScores, firstHalfKickoffs, secondHalfKickoffs)
-    if (aflLive) hasLive = true
-  } catch (err) {
-    console.error('[afl-only] sync error:', err.message)
   }
 
   return { hasLive, nearestKickoffMs }
