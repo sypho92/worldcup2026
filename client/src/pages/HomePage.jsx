@@ -385,15 +385,12 @@ export default function HomePage() {
 
         {/* Header compact */}
         <div className="sched-header">
-          <button className="sched-greeting" onClick={() => setShowProfile(true)}>
-            <span className="sched-avatar">
+          <div className="sched-greeting">
+            <div className="sched-greeting-name">{player?.name}</div>
+            <button className="sched-avatar" onClick={() => setShowProfile(true)} title="Modifier le profil">
               <AvatarDisplay avatar={player?.avatar} size={38} />
-            </span>
-            <div>
-              <div className="sched-greeting-name">{player?.name}</div>
-              <div className="sched-greeting-sub">Modifier le profil</div>
-            </div>
-          </button>
+            </button>
+          </div>
 
           <div className="sched-stats">
             <div className="sched-stat">

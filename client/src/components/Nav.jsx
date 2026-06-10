@@ -135,19 +135,29 @@ export default function Nav() {
       {/* Bottom nav (mobile) — Admin est sidebar uniquement */}
       <nav className="bottom-nav">
         {NAV_ITEMS.filter((item) => !item.sidebarOnly).map((item) => (
-          <button
-            key={item.path}
-            className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
-            onClick={() => navigate(item.path)}
-          >
-            <span className="nav-icon-wrap">
-              {item.icon}
-              {item.hasBadge && pendingCount > 0 && (
-                <span className="nav-badge">{pendingCount}</span>
-              )}
-            </span>
-            <span className="nav-label">{item.label}</span>
-          </button>
+          item.path === '/' ? (
+            <button
+              key={item.path}
+              className={`nav-item nav-item--logo ${isActive(item.path) ? 'active' : ''}`}
+              onClick={() => navigate('/')}
+            >
+              <img src="/logo.png" alt="Accueil" className="nav-logo-img" />
+            </button>
+          ) : (
+            <button
+              key={item.path}
+              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="nav-icon-wrap">
+                {item.icon}
+                {item.hasBadge && pendingCount > 0 && (
+                  <span className="nav-badge">{pendingCount}</span>
+                )}
+              </span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          )
         ))}
       </nav>
     </>

@@ -84,12 +84,9 @@ img, svg { display: block; }
   filter: drop-shadow(0 0 8px rgba(212,152,30,0.25));
 }
 
-/* Logo mobile (header sticky) — masqué sur desktop */
+/* Logo mobile (header sticky) — masqué partout */
 .sched-mobile-logo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px 0 4px;
+  display: none;
 }
 .sched-mobile-logo-img {
   height: 72px;
@@ -229,6 +226,23 @@ img, svg { display: block; }
 .nav-item svg, .nav-icon-wrap svg { width: 22px; height: 22px; stroke-width: 1.8; }
 
 .nav-label { display: block; }
+
+.nav-item--logo {
+  justify-content: center;
+  padding: 0;
+}
+.nav-logo-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.75;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.nav-item--logo.active .nav-logo-img,
+.nav-item--logo:hover .nav-logo-img {
+  opacity: 1;
+  transform: scale(1.08);
+}
 
 /* Sidebar nav items */
 .sidebar-nav-item {
@@ -1184,7 +1198,7 @@ img, svg { display: block; }
 }
 @media (min-width: 768px) { .sched-header { padding: 20px 0 16px; } }
 
-.sched-avatar {
+.sched-avatar-wrap {
   width: 42px;
   height: 42px;
   display: flex;
@@ -1196,13 +1210,6 @@ img, svg { display: block; }
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 50%;
-}
-.sched-greeting-name {
-  font-family: 'Roboto Condensed', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: none;
 }
 .sched-greeting-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.3px; }
 
@@ -1246,7 +1253,7 @@ img, svg { display: block; }
 
 /* ── Competition frise ── */
 .comp-frise {
-  display: flex;
+  display: none;
   align-items: stretch;
   margin: 4px 16px 8px;
   border: 1px solid rgba(255,255,255,0.1);
@@ -1259,6 +1266,7 @@ img, svg { display: block; }
 .comp-frise::-webkit-scrollbar { display: none; }
 @media (min-width: 768px) {
   .comp-frise {
+    display: flex;
     margin: 4px auto 8px;
     max-width: 1160px;
     width: 100%;
@@ -2373,21 +2381,37 @@ img, svg { display: block; }
   margin: 0;
 }
 
-/* sched-greeting now a button */
+/* sched-greeting — nom au-dessus, avatar en dessous, centré verticalement */
 .sched-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  align-self: stretch;
+}
+.sched-greeting-name {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.sched-avatar {
   background: none;
   border: none;
-  color: inherit;
-  text-align: left;
+  padding: 2px;
   cursor: pointer;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 6px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.sched-greeting:hover { background: rgba(255,255,255,0.05); }
+.sched-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 2px var(--accent);
+}
 
 /* ===== Adaptations mobile (< 600px) ===== */
 @media (max-width: 600px) {
