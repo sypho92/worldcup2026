@@ -717,6 +717,22 @@ img, svg { display: block; }
   color: var(--accent);
 }
 
+/* ── Mobile compact ── */
+@media (max-width: 767px) {
+  .lt-row td          { padding: 12px 8px; }
+  .lt-col-rank        { width: 44px; }
+  .lt-col-stat        { width: 44px; }
+  .lt-col-pct         { width: 50px; }
+  .lt-col-pts         { width: 54px; }
+  .lt-col-player      { gap: 10px; }
+  .lt-rank            { font-size: 16px; }
+  .lt-rank--top       { font-size: 22px; }
+  .lt-name            { font-size: 15px; }
+  .lt-val             { font-size: 15px; }
+  .lt-pts             { font-size: 22px; }
+  .lt-head th         { font-size: 11px; padding: 10px 6px; letter-spacing: 0.6px; }
+}
+
 /* Tooltip en-têtes */
 .lt-th-tip { position: relative; cursor: default; }
 .lt-th-tip::after {

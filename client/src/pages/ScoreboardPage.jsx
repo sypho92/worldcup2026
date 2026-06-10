@@ -180,7 +180,7 @@ export default function ScoreboardPage() {
                       </span>
                     </td>
                     <td className="lt-col-player">
-                      <AvatarDisplay avatar={p.avatar} size={46} />
+                      <AvatarDisplay avatar={p.avatar} size={38} />
                       <span className="lt-name">{p.name}</span>
                     </td>
                     <td className="lt-col-stat lt-val">{played}</td>
