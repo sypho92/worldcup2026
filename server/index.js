@@ -5,6 +5,7 @@ const path = require('path')
 const { db } = require('./firebase')
 const { startSync, syncNow } = require('./sync')
 const { fetchMatches, mapMatch, STAGE_TO_PHASE } = require('./footballData')
+const discord = require('./discord')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -155,6 +156,24 @@ app.post('/api/admin/patch-match-date', async (req, res) => {
     await db.ref(`matches/${matchId}`).update({ utcDate, date, time })
     res.json({ success: true, matchId, utcDate, date, time })
   } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Watch party — crée (ou réutilise) un salon vocal Discord pour le match
+app.post('/api/watchparty/:matchId', async (req, res) => {
+  const { matchId } = req.params
+  if (!discord.isConfigured()) {
+    return res.status(503).json({ error: 'Discord non configuré (DISCORD_BOT_TOKEN / DISCORD_GUILD_ID)' })
+  }
+  try {
+    const snap = await db.ref(`matches/${matchId}`).once('value')
+    const match = snap.val()
+    if (!match) return res.status(404).json({ error: 'Match introuvable' })
+    const party = await discord.createWatchParty(match)
+    res.json({ success: true, ...party })
+  } catch (err) {
+    console.error('Watch party error:', err)
     res.status(500).json({ error: err.message })
   }
 })

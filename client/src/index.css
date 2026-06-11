@@ -1837,6 +1837,7 @@ img, svg { display: block; }
 .sched-phase-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 12px;
@@ -4508,3 +4509,35 @@ img, svg { display: block; }
 }
 
 
+
+/* ── Watch party (Discord) ─────────────────────────────────────────────── */
+.watch-party-btn {
+  display: block;
+  width: 100%;
+  background: #5865f218;
+  border: 1px solid #5865f255;
+  border-radius: var(--radius-sm);
+  color: #7983f5;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 9px 12px;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 10px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.watch-party-btn:hover {
+  background: #5865f230;
+  border-color: #5865f2;
+}
+.watch-party-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.watch-party-btn.error {
+  border-color: var(--error);
+  color: var(--error);
+  background: none;
+}

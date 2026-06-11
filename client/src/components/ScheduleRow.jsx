@@ -6,6 +6,7 @@ import Flag from './Flag'
 import { AvatarDisplay } from './AvatarDisplay'
 import PlayerProfileModal from './PlayerProfileModal'
 import ChallengeModal from './ChallengeModal'
+import WatchPartyButton from './WatchPartyButton'
 import { abbrev } from '../utils/format'
 
 export { abbrev }  // re-export so existing imports don't break
@@ -452,6 +453,8 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
           <BetBar match={match} onPlayerClick={setViewedPlayerId} onChallengeClick={setChallengedId} />
         </>
       )}
+
+      {!finished && !locked && <WatchPartyButton match={match} label />}
 
       {!finished && !locked && (
         <div className="sched-bet-row">

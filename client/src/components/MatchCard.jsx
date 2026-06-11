@@ -2,6 +2,7 @@ import { useApp } from '../context/AppContext'
 import { getPhaseLabel, getPhaseBadgeColor } from '../utils/format'
 import BetButtons from './BetButtons'
 import Flag from './Flag'
+import WatchPartyButton from './WatchPartyButton'
 
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T12:00:00')
@@ -39,11 +40,14 @@ export default function MatchCard({ match, showBets = true, showVenue = false })
           </span>
           <span className="match-meta-date">{formatDate(match.date)} · {match.time}</span>
         </div>
-        {finished && bet && (
-          <span style={{ fontSize: 13, color: bet === result.winner ? 'var(--success)' : 'var(--error)' }}>
-            {bet === result.winner ? '✓' : '✗'}
-          </span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {!finished && <WatchPartyButton match={match} />}
+          {finished && bet && (
+            <span style={{ fontSize: 13, color: bet === result.winner ? 'var(--success)' : 'var(--error)' }}>
+              {bet === result.winner ? '✓' : '✗'}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="match-teams">
