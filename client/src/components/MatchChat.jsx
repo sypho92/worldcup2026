@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from './AvatarDisplay'
 import PlayerProfileModal from './PlayerProfileModal'
+import { resizeImageForChat } from '../utils/image'
 
 const EMOJIS = ['😊', '😂', '🔥', '❤️']
 
@@ -21,11 +22,14 @@ export default function MatchChat({ matchId }) {
   const [comments, setComments] = useState([])
   const [reactions, setReactions] = useState({})
   const [text, setText] = useState('')
+  const [image, setImage] = useState(null)
   const [sending, setSending] = useState(false)
   const [profileId, setProfileId] = useState(null)
   const [pickerOpen, setPickerOpen] = useState(null)
   const [pickerPos, setPickerPos] = useState(null)
+  const [lightbox, setLightbox] = useState(null)
   const messagesRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     const unsub = onValue(ref(db, `match_comments/${matchId}`), (snap) => {
@@ -54,19 +58,29 @@ export default function MatchChat({ matchId }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [pickerOpen])
 
+  async function handleImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) return
+    const b64 = await resizeImageForChat(file)
+    setImage(b64)
+  }
+
   async function send(e) {
     e.preventDefault()
-    if (!text.trim() || !player || sending) return
+    if ((!text.trim() && !image) || !player || sending) return
     setSending(true)
     try {
-      await push(ref(db, `match_comments/${matchId}`), {
+      const payload = {
         pseudoId: player.pseudoId,
         name: player.name,
         avatar: player.avatar,
         text: text.trim(),
         createdAt: Date.now(),
-      })
+      }
+      if (image) payload.image = image
+      await push(ref(db, `match_comments/${matchId}`), payload)
       setText('')
+      setImage(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       setTimeout(() => {
         if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight
       }, 100)
@@ -90,6 +104,13 @@ export default function MatchChat({ matchId }) {
   return (
     <div className="match-chat">
       {profileId && <PlayerProfileModal pseudoId={profileId} onClose={() => setProfileId(null)} />}
+      {lightbox && createPortal(
+        <div className="chat-lightbox" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="" onClick={(e) => e.stopPropagation()} />
+          <button className="chat-lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+        </div>,
+        document.body
+      )}
       {pickerOpen && pickerPos && createPortal(
         <div className="mc-picker" style={{ bottom: pickerPos.bottom, right: pickerPos.right }}>
           {EMOJIS.map((e) => (
@@ -121,7 +142,15 @@ export default function MatchChat({ matchId }) {
                   <span className="mc-name">{c.name}</span>
                   <span className="mc-time">{timeAgo(c.createdAt)}</span>
                 </div>
-                <div className="mc-text">{c.text}</div>
+                {c.text && <div className="mc-text">{c.text}</div>}
+                {c.image && (
+                  <img
+                    className="mc-msg-image"
+                    src={c.image}
+                    alt=""
+                    onClick={() => setLightbox(c.image)}
+                  />
+                )}
                 {Object.keys(counts).length > 0 && (
                   <div className="mc-chips">
                     {Object.entries(counts).map(([e, n]) => (
@@ -155,18 +184,44 @@ export default function MatchChat({ matchId }) {
       </div>
 
       {player && (
-        <form className="mc-form" onSubmit={send}>
-          <AvatarDisplay avatar={player.avatar} size={28} />
-          <input
-            className="mc-input"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Commentaire..."
-            maxLength={300}
-            disabled={sending}
-          />
-          <button className="mc-send" type="submit" disabled={!text.trim() || sending}>↑</button>
-        </form>
+        <div className="mc-form-wrap">
+          {image && (
+            <div className="chat-img-preview">
+              <div className="chat-img-preview-inner">
+                <img className="chat-img-preview-thumb" src={image} alt="" />
+                <button
+                  className="chat-img-preview-remove"
+                  type="button"
+                  onClick={() => { setImage(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                >✕</button>
+              </div>
+            </div>
+          )}
+          <form className="mc-form" onSubmit={send}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => handleImageFile(e.target.files[0])}
+            />
+            <button
+              className="mc-attach-btn"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >+</button>
+            <AvatarDisplay avatar={player.avatar} size={28} />
+            <input
+              className="mc-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Commentaire..."
+              maxLength={300}
+              disabled={sending}
+            />
+            <button className="mc-send" type="submit" disabled={(!text.trim() && !image) || sending}>↑</button>
+          </form>
+        </div>
       )}
     </div>
   )

@@ -5042,3 +5042,136 @@ img, svg { display: block; }
   flex-shrink: 0;
 }
 .feed-send:disabled { opacity: 0.4; cursor: default; }
+
+/* ─── Chat image upload (partagé MatchChat + FeedPage) ──────────────────── */
+.mc-form-wrap,
+.feed-form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Bouton + pour attacher une image */
+.mc-attach-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card-2);
+  color: var(--text-secondary);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.mc-attach-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* Preview d'image avant envoi */
+.chat-img-preview {
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--border);
+}
+.chat-img-preview-inner {
+  position: relative;
+  display: inline-block;
+}
+.chat-img-preview-thumb {
+  display: block;
+  max-height: 160px;
+  max-width: 260px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  object-fit: cover;
+}
+.chat-img-preview-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* Image dans les bulles de message */
+.mc-msg-image,
+.feed-msg-image {
+  display: block;
+  max-width: 260px;
+  max-height: 320px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  cursor: zoom-in;
+  margin-top: 4px;
+  transition: opacity 0.15s;
+}
+.mc-msg-image:hover,
+.feed-msg-image:hover { opacity: 0.88; }
+
+@media (max-width: 767px) {
+  .mc-msg-image, .feed-msg-image { max-width: 200px; }
+}
+
+/* Lightbox */
+.chat-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  cursor: zoom-out;
+  animation: chat-lb-in 0.18s ease;
+}
+@keyframes chat-lb-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.chat-lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  cursor: default;
+  object-fit: contain;
+}
+.chat-lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.chat-lightbox-close:hover { background: rgba(255,255,255,0.25); }

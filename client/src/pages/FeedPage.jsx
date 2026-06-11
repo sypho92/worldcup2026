@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from '../components/AvatarDisplay'
 import PlayerProfileModal from '../components/PlayerProfileModal'
+import { resizeImageForChat } from '../utils/image'
 
 const EMOJIS = ['😊', '😂', '🔥', '❤️']
 
@@ -21,11 +22,14 @@ export default function FeedPage() {
   const [posts, setPosts] = useState([])
   const [reactions, setReactions] = useState({})
   const [text, setText] = useState('')
+  const [image, setImage] = useState(null)
   const [sending, setSending] = useState(false)
   const [profileId, setProfileId] = useState(null)
   const [pickerOpen, setPickerOpen] = useState(null)
   const [pickerPos, setPickerPos] = useState(null)
+  const [lightbox, setLightbox] = useState(null)
   const bottomRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     const unsub = onValue(ref(db, 'feed'), (snap) => {
@@ -54,19 +58,29 @@ export default function FeedPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [pickerOpen])
 
+  async function handleImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) return
+    const b64 = await resizeImageForChat(file)
+    setImage(b64)
+  }
+
   async function send(e) {
     e.preventDefault()
-    if (!text.trim() || !player || sending) return
+    if ((!text.trim() && !image) || !player || sending) return
     setSending(true)
     try {
-      await push(ref(db, 'feed'), {
+      const payload = {
         pseudoId: player.pseudoId,
         name: player.name,
         avatar: player.avatar,
         text: text.trim(),
         createdAt: Date.now(),
-      })
+      }
+      if (image) payload.image = image
+      await push(ref(db, 'feed'), payload)
       setText('')
+      setImage(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     } catch (err) {
       console.error('[feed] send error:', err)
@@ -88,6 +102,13 @@ export default function FeedPage() {
   return (
     <div className="page feed-page">
       {profileId && <PlayerProfileModal pseudoId={profileId} onClose={() => setProfileId(null)} />}
+      {lightbox && createPortal(
+        <div className="chat-lightbox" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="" onClick={(e) => e.stopPropagation()} />
+          <button className="chat-lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+        </div>,
+        document.body
+      )}
       {pickerOpen && pickerPos && createPortal(
         <div className="feed-picker" style={{ bottom: pickerPos.bottom, right: pickerPos.right }}>
           {EMOJIS.map((e) => (
@@ -124,7 +145,15 @@ export default function FeedPage() {
                   <span className="feed-name">{p.name}</span>
                   <span className="feed-time">{timeAgo(p.createdAt)}</span>
                 </div>
-                <div className="feed-text">{p.text}</div>
+                {p.text && <div className="feed-text">{p.text}</div>}
+                {p.image && (
+                  <img
+                    className="feed-msg-image"
+                    src={p.image}
+                    alt=""
+                    onClick={() => setLightbox(p.image)}
+                  />
+                )}
                 {Object.keys(counts).length > 0 && (
                   <div className="feed-chips">
                     {Object.entries(counts).map(([e, n]) => (
@@ -159,18 +188,44 @@ export default function FeedPage() {
       </div>
 
       {player && (
-        <form className="feed-form" onSubmit={send}>
-          <AvatarDisplay avatar={player.avatar} size={32} />
-          <input
-            className="feed-input"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Exprime-toi..."
-            maxLength={500}
-            disabled={sending}
-          />
-          <button className="feed-send" type="submit" disabled={!text.trim() || sending}>↑</button>
-        </form>
+        <div className="feed-form-wrap">
+          {image && (
+            <div className="chat-img-preview">
+              <div className="chat-img-preview-inner">
+                <img className="chat-img-preview-thumb" src={image} alt="" />
+                <button
+                  className="chat-img-preview-remove"
+                  type="button"
+                  onClick={() => { setImage(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                >✕</button>
+              </div>
+            </div>
+          )}
+          <form className="feed-form" onSubmit={send}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => handleImageFile(e.target.files[0])}
+            />
+            <button
+              className="mc-attach-btn"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >+</button>
+            <AvatarDisplay avatar={player.avatar} size={32} />
+            <input
+              className="feed-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Exprime-toi..."
+              maxLength={500}
+              disabled={sending}
+            />
+            <button className="feed-send" type="submit" disabled={(!text.trim() && !image) || sending}>↑</button>
+          </form>
+        </div>
       )}
     </div>
   )
