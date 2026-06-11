@@ -419,9 +419,9 @@ export default function ScheduleRow({ match, entryDelay = 0, isNextMatch = false
             {match.minuteExtra ? `${displayMinute}+${match.minuteExtra}'` : `${displayMinute}'`}
           </span>
         </div>
-      ) : !locked ? (
+      ) : (
         <div className="sched-time-badge">{match.time ?? '--:--'}</div>
-      ) : null}
+      )}
 
       <div className="sched-main">
 
