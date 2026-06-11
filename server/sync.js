@@ -1,6 +1,8 @@
 const { db } = require('./firebase')
 const { fetchFixturesByDate, fetchFixtureLive, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
 
+const DEV_MOCK = process.env.DEV_MOCK === 'true'
+
 // ─── Intervalles de polling ──────────────────────────────────────────────────
 const POLL_LIVE_MS     = 5 * 60 * 1000   // 5 min  — match en cours (IN_PLAY)
 const POLL_HALFTIME_MS = 15 * 60 * 1000  // 15 min — mi-temps (PAUSED)
@@ -309,12 +311,17 @@ async function loop() {
 
 // ─── Démarrage ───────────────────────────────────────────────────────────────
 async function startSync() {
+  if (DEV_MOCK) {
+    console.log('[sync] DEV_MOCK=true — polling API désactivé')
+    return
+  }
   console.log('[sync] démarrage — mode AFL-only')
   console.log('[sync] polling: 5min live | 15min mi-temps | 5min pré-match | idle jusqu\'au KO')
   loop()
 }
 
 async function syncNow() {
+  if (DEV_MOCK) return { hasLive: false }
   return syncOnce()
 }
 
