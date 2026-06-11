@@ -254,12 +254,13 @@ function formatCountdown(diffMs) {
 
 // Renvoie l'ID du prochain match non commencé
 function useNextMatchId() {
-  const { isMatchLocked, matches } = useApp()
+  const { matches, results } = useApp()
   return useMemo(() => {
+    const now = Date.now()
     return matches
-      .filter((m) => m.date && m.time && !isMatchLocked(m))
+      .filter((m) => m.date && m.time && !results[m.id] && new Date(m.utcDate).getTime() > now)
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]?.id ?? null
-  }, [isMatchLocked, matches])
+  }, [matches, results])
 }
 
 // Bandeau décompte — ne s'affiche que si targetMatchId est le prochain match
