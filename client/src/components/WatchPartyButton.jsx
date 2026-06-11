@@ -46,7 +46,7 @@ export default function WatchPartyButton({ match, label = false }) {
       disabled={loading}
       title="Clique pour ouvrir Discord et rejoindre la fan zone"
     >
-      {loading ? '⏳ Ouverture...' : error ? '✕ Indispo' : label ? '👁 Fan zone · Clique pour ouvrir Discord' : '👁'}
+      {loading ? '⏳ Ouverture...' : error ? '✕ Indispo' : label ? '📺 Regarder gratuitement avec les fans sur Discord' : '📺'}
     </button>
   )
 }
