@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { ref, onValue, remove } from 'firebase/database'
+import { db } from '../firebase'
 import { useApp } from '../context/AppContext'
 import { getPhaseLabel, getPhaseBadgeColor } from '../utils/format'
 import Flag from '../components/Flag'
@@ -243,6 +245,117 @@ function AdminMatchRow({ match, adminPwd, onSuccess }) {
   )
 }
 
+function ModerationTab() {
+  const { matches } = useApp()
+  const [feedPosts, setFeedPosts] = useState([])
+  const [matchComments, setMatchComments] = useState([]) // [{matchId, commentId, ...data}]
+  const [deleting, setDeleting] = useState(null)
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, 'feed'), (snap) => {
+      const val = snap.val() || {}
+      setFeedPosts(Object.entries(val).map(([id, p]) => ({ id, ...p })).sort((a, b) => b.createdAt - a.createdAt))
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, 'match_comments'), (snap) => {
+      const val = snap.val() || {}
+      const all = []
+      Object.entries(val).forEach(([matchId, comments]) => {
+        Object.entries(comments).forEach(([commentId, c]) => {
+          all.push({ matchId, commentId, ...c })
+        })
+      })
+      all.sort((a, b) => b.createdAt - a.createdAt)
+      setMatchComments(all)
+    })
+    return () => unsub()
+  }, [])
+
+  function matchLabel(matchId) {
+    const m = matches.find((x) => x.id === matchId)
+    if (!m) return matchId
+    return `${m.homeTeam?.name ?? '?'} – ${m.awayTeam?.name ?? '?'}`
+  }
+
+  function fmt(ts) {
+    return new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  }
+
+  async function deleteFeed(id) {
+    setDeleting('feed_' + id)
+    try { await remove(ref(db, `feed/${id}`)) } finally { setDeleting(null) }
+  }
+
+  async function deleteComment(matchId, commentId) {
+    setDeleting(`mc_${matchId}_${commentId}`)
+    try { await remove(ref(db, `match_comments/${matchId}/${commentId}`)) } finally { setDeleting(null) }
+  }
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Feed global ({feedPosts.length})</h3>
+      {feedPosts.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24 }}>Aucun message.</p>
+      ) : (
+        <div className="admin-mod-list" style={{ marginBottom: 32 }}>
+          {feedPosts.map((p) => {
+            const key = 'feed_' + p.id
+            return (
+              <div key={p.id} className="admin-mod-row">
+                <AvatarDisplay avatar={p.avatar} size={28} />
+                <div className="admin-mod-body">
+                  <span className="admin-mod-name">{p.name}</span>
+                  <span className="admin-mod-time">{fmt(p.createdAt)}</span>
+                  <p className="admin-mod-text">{p.text}</p>
+                </div>
+                <button
+                  className="admin-mod-del"
+                  onClick={() => deleteFeed(p.id)}
+                  disabled={deleting === key}
+                >
+                  {deleting === key ? '...' : '🗑'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Commentaires match ({matchComments.length})</h3>
+      {matchComments.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aucun commentaire.</p>
+      ) : (
+        <div className="admin-mod-list">
+          {matchComments.map((c) => {
+            const key = `mc_${c.matchId}_${c.commentId}`
+            return (
+              <div key={key} className="admin-mod-row">
+                <AvatarDisplay avatar={c.avatar} size={28} />
+                <div className="admin-mod-body">
+                  <span className="admin-mod-name">{c.name}</span>
+                  <span className="admin-mod-match">{matchLabel(c.matchId)}</span>
+                  <span className="admin-mod-time">{fmt(c.createdAt)}</span>
+                  <p className="admin-mod-text">{c.text}</p>
+                </div>
+                <button
+                  className="admin-mod-del"
+                  onClick={() => deleteComment(c.matchId, c.commentId)}
+                  disabled={deleting === key}
+                >
+                  {deleting === key ? '...' : '🗑'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DashboardTab() {
   const { players, allBets, challenges } = useApp()
 
@@ -280,7 +393,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [activePhase, setActivePhase] = useState('group')
-  const [adminTab, setAdminTab] = useState('results') // 'results' | 'players' | 'dashboard'
+  const [adminTab, setAdminTab] = useState('results') // 'results' | 'players' | 'dashboard' | 'moderation'
 
   async function handleAuth(e) {
     e.preventDefault()
@@ -364,12 +477,20 @@ export default function AdminPage() {
         >
           📊 Dashboard
         </button>
+        <button
+          className={`admin-main-tab ${adminTab === 'moderation' ? 'active' : ''}`}
+          onClick={() => setAdminTab('moderation')}
+        >
+          🛡 Modération
+        </button>
       </div>
 
       {adminTab === 'dashboard' ? (
         <DashboardTab />
       ) : adminTab === 'players' ? (
         <PlayerManager />
+      ) : adminTab === 'moderation' ? (
+        <ModerationTab />
       ) : (
         <>
           <div className="filter-tabs" style={{ marginBottom: 20 }}>
