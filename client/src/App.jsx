@@ -8,6 +8,7 @@ import ScoreboardPage from './pages/ScoreboardPage'
 import AdminPage from './pages/AdminPage'
 import TableauPage from './pages/TableauPage'
 import ChallengesPage from './pages/ChallengesPage'
+import FeedPage from './pages/FeedPage'
 import ChallengeNotifications from './components/ChallengeNotifications'
 import FunNotifications from './components/FunNotifications'
 import LiveTicker from './components/LiveTicker'
@@ -47,6 +48,7 @@ function AppRoutes() {
           <Route path="/bets" element={<RequireAuth><MyBetsPage /></RequireAuth>} />
           <Route path="/scoreboard" element={<RequireAuth><ScoreboardPage /></RequireAuth>} />
           <Route path="/tableau" element={<RequireAuth><TableauPage /></RequireAuth>} />
+          <Route path="/feed" element={<RequireAuth><FeedPage /></RequireAuth>} />
           <Route path="/challenges" element={<RequireAuth><ChallengesPage /></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth><AdminPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />

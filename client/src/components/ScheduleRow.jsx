@@ -1,5 +1,7 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import { ref, onValue } from 'firebase/database'
+import { db } from '../firebase'
 import { useApp } from '../context/AppContext'
 import { getPhaseLabel, isKnockout } from '../utils/format'
 import Flag from './Flag'
@@ -7,6 +9,7 @@ import { AvatarDisplay } from './AvatarDisplay'
 import PlayerProfileModal from './PlayerProfileModal'
 import ChallengeModal from './ChallengeModal'
 import WatchPartyButton from './WatchPartyButton'
+import MatchChat from './MatchChat'
 import { abbrev } from '../utils/format'
 
 export { abbrev }  // re-export so existing imports don't break
@@ -307,6 +310,15 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
 export default function ScheduleRow({ match, entryDelay = 0, isNextMatch = false }) {
   const { results, myBets, placeBet, isMatchLocked, challenges, players, player, requestCancelChallenge, respondToCancelChallenge } = useApp()
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
+  const [showChat, setShowChat] = useState(false)
+  const [commentCount, setCommentCount] = useState(0)
+
+  useEffect(() => {
+    const unsub = onValue(ref(db, `match_comments/${match.id}`), (snap) => {
+      setCommentCount(snap.exists() ? Object.keys(snap.val()).length : 0)
+    })
+    return () => unsub()
+  }, [match.id])
   const [challengedId, setChallengedId] = useState(null)
   const [animatingBtn, setAnimatingBtn] = useState(null)
   const [expanded, setExpanded] = useState(false)
@@ -579,6 +591,14 @@ export default function ScheduleRow({ match, entryDelay = 0, isNextMatch = false
           </button>
         </div>
       )}
+
+      <div className="sched-chat-row">
+        <button className="sched-chat-toggle" onClick={() => setShowChat((o) => !o)}>
+          💬 Chat{commentCount > 0 ? ` · ${commentCount}` : ''}
+          <span style={{ marginLeft: 4 }}>{showChat ? '▲' : '▼'}</span>
+        </button>
+      </div>
+      {showChat && <MatchChat matchId={match.id} />}
 
       {viewedPlayerId && createPortal(
         <PlayerProfileModal
