@@ -1,0 +1,12 @@
+[Unit]
+Description=WatchParty Streamer (channel %i)
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=DISPLAY=:99
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+WorkingDirectory=/home/root92/watchparty/streamer
+ExecStart=/usr/bin/node --env-file=/home/root92/watchparty/streamer/.env /home/root92/watchparty/streamer/index.mjs %i
+Restart=no

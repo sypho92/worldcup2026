@@ -124,6 +124,40 @@ app.post('/api/admin/sync-now', async (req, res) => {
   }
 })
 
+// Test Discord live events (admin only) — simule les events d'un match
+app.post('/api/admin/discord-test/:matchId', async (req, res) => {
+  const { password, event, homeScore = 1, awayScore = 0 } = req.body
+  const { matchId } = req.params
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' })
+  if (!discord.isConfigured()) return res.status(503).json({ error: 'Discord non configuré' })
+
+  try {
+    const snap = await db.ref(`matches/${matchId}`).once('value')
+    const m = snap.val()
+    if (!m) return res.status(404).json({ error: 'Match introuvable' })
+
+    const match = { id: matchId, homeTeam: m.homeTeam, awayTeam: m.awayTeam }
+    const ht = m.homeTeam?.tla || '?'
+    const at = m.awayTeam?.tla || '?'
+    const hs = Number(homeScore)
+    const as_ = Number(awayScore)
+
+    const events = {
+      start:    () => Promise.all([discord.joinMatchVoice(match), discord.postMatchUpdate(match, `🔴 **Match démarré !** ${ht} vs ${at}`)]),
+      halftime: () => discord.postMatchUpdate(match, `⏸ **Mi-temps** : ${ht} **${hs}–${as_}** ${at}`),
+      second:   () => discord.postMatchUpdate(match, `▶ **2ème mi-temps** : ${ht} **${hs}–${as_}** ${at}`),
+      goal:     () => discord.postMatchUpdate(match, `⚽ **But !** ${ht} **${hs}–${as_}** ${at}`),
+      end:      () => Promise.all([discord.postMatchUpdate(match, `🏁 **Fin du match !** ${ht} **${hs}–${as_}** ${at}`), Promise.resolve(discord.leaveMatchVoice(matchId))]),
+    }
+
+    if (!events[event]) return res.status(400).json({ error: `event inconnu, valeurs possibles : ${Object.keys(events).join(', ')}` })
+    await events[event]()
+    res.json({ success: true, event, matchId })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Diagnostic : liste les matchs retournés par football-data pour WC2026 (admin only)
 app.get('/api/admin/api-matches', async (req, res) => {
   const { password } = req.query

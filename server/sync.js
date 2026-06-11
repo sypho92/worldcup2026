@@ -1,6 +1,7 @@
 const { db } = require('./firebase')
 const { fetchMatches, fetchMatchDetail, mapGoals, normalizeWinner } = require('./footballData')
 const { fetchFixturesByDate, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
+const discord = require('./discord')
 
 const COMPETITIONS = [
   { id: 2000, label: 'WC2026', params: () => ({ season: '2026' }) },
@@ -146,6 +147,41 @@ async function syncCompetition(competitionId, fdIndex, overrides, prevStatuses, 
     }
 
     await db.ref(`matches/${matchId}`).update(updates)
+
+    // ── Discord live events ───────────────────────────────────────────────
+    if (discord.isConfigured()) {
+      const match = { id: matchId, homeTeam: apiMatch.homeTeam, awayTeam: apiMatch.awayTeam }
+      const ht  = apiMatch.homeTeam?.tla || '?'
+      const at  = apiMatch.awayTeam?.tla || '?'
+      const hs  = apiMatch.score?.fullTime?.home ?? 0
+      const as_ = apiMatch.score?.fullTime?.away ?? 0
+      const prev = prevScores[matchId] || { home: null, away: null }
+      const scoreChanged = (apiMatch.score?.fullTime?.home ?? null) !== prev.home ||
+                           (apiMatch.score?.fullTime?.away ?? null) !== prev.away
+
+      // Match démarre → bot rejoint le vocal + message
+      if (apiMatch.status === 'IN_PLAY' && wasNotLive) {
+        discord.joinMatchVoice(match).catch(() => {})
+        discord.postMatchUpdate(match, `🔴 **Match démarré !** ${ht} vs ${at}`).catch(() => {})
+      }
+      // Mi-temps
+      if (apiMatch.status === 'PAUSED' && prevStatuses[matchId] === 'IN_PLAY') {
+        discord.postMatchUpdate(match, `⏸ **Mi-temps** : ${ht} **${hs}–${as_}** ${at}`).catch(() => {})
+      }
+      // 2ème mi-temps
+      if (apiMatch.status === 'IN_PLAY' && prevStatuses[matchId] === 'PAUSED') {
+        discord.postMatchUpdate(match, `▶ **2ème mi-temps** : ${ht} **${hs}–${as_}** ${at}`).catch(() => {})
+      }
+      // But marqué
+      if (scoreChanged && apiMatch.status === 'IN_PLAY' && apiMatch.score?.fullTime?.home !== null) {
+        discord.postMatchUpdate(match, `⚽ **But !** ${ht} **${hs}–${as_}** ${at}`).catch(() => {})
+      }
+      // Fin du match → bot quitte le vocal + message
+      if (apiMatch.status === 'FINISHED' && prevStatuses[matchId] !== 'FINISHED') {
+        discord.postMatchUpdate(match, `🏁 **Fin du match !** ${ht} **${hs}–${as_}** ${at}`).catch(() => {})
+        discord.leaveMatchVoice(matchId)
+      }
+    }
 
     // Détection changement de score → file d'attente buts AFL
     if (process.env.AFL_API_KEY) {
