@@ -190,9 +190,9 @@ export default function ScoreboardPage() {
                       <span className={`lt-rank ${i < 3 ? 'lt-rank--top' : ''}`}>
                         {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                       </span>
-                      <RankArrow delta={scoreboardSnapshot[p.pseudoId] != null ? scoreboardSnapshot[p.pseudoId] - (i + 1) : null} />
                     </td>
                     <td className="lt-col-player">
+                      <RankArrow delta={scoreboardSnapshot[p.pseudoId] != null ? scoreboardSnapshot[p.pseudoId] - (i + 1) : null} />
                       <AvatarDisplay avatar={p.avatar} size={38} />
                       <span className="lt-name">{formatPlayerName(p.name)}</span>
                     </td>

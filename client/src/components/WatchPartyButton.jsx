@@ -4,9 +4,6 @@ export default function WatchPartyButton({ match, label = false }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
-  const today = new Date().toLocaleDateString('en-CA')
-  if (match.date !== today) return null
-
   async function openParty(e) {
     e.stopPropagation()
     if (loading) return

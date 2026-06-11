@@ -109,7 +109,7 @@ function DateSection({ dateStr, dayMatches, nextMatchId }) {
           {dayMatches.map((m, i) => (
             <div key={m.id}>
               <NextMatchCountdown targetMatchId={m.id} />
-              <ScheduleRow match={m} entryDelay={i * 0.07} />
+              <ScheduleRow match={m} entryDelay={i * 0.07} isNextMatch={m.id === nextMatchId} />
             </div>
           ))}
         </div>
@@ -297,6 +297,7 @@ function NextMatchCountdown({ targetMatchId }) {
 
 export default function HomePage() {
   const { player, myPoints, myBetsCount, playedCount, scoreboard, results, matches, matchesLoading } = useApp()
+  const nextMatchId = useNextMatchId()
   const [filter, setFilter] = useState('all')
   const [showProfile, setShowProfile] = useState(false)
   const todayRef = useRef(null)
@@ -462,7 +463,7 @@ export default function HomePage() {
               null
             }
           >
-            <DateSection dateStr={dateStr} dayMatches={dayMatches} />
+            <DateSection dateStr={dateStr} dayMatches={dayMatches} nextMatchId={nextMatchId} />
           </div>
         ))}
       </div>

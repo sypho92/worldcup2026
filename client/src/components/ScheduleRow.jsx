@@ -304,7 +304,7 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
   )
 }
 
-export default function ScheduleRow({ match, entryDelay = 0 }) {
+export default function ScheduleRow({ match, entryDelay = 0, isNextMatch = false }) {
   const { results, myBets, placeBet, isMatchLocked, challenges, players, player, requestCancelChallenge, respondToCancelChallenge } = useApp()
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
   const [challengedId, setChallengedId] = useState(null)
@@ -550,7 +550,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         </>
       )}
 
-      {!finished && <WatchPartyButton match={match} label />}
+      {isNextMatch && <WatchPartyButton match={match} label />}
 
       {!finished && !locked && (
         <div className="sched-bet-row">
