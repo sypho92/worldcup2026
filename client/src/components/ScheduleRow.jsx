@@ -550,7 +550,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         </>
       )}
 
-      {!finished && !locked && <WatchPartyButton match={match} label />}
+      {!finished && <WatchPartyButton match={match} label />}
 
       {!finished && !locked && (
         <div className="sched-bet-row">
