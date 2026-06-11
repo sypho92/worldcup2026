@@ -48,10 +48,67 @@ function GoalsList({ goals }) {
   )
 }
 
-const MAX_AVATARS = 5
+const MAX_VISIBLE = 3
+
+function BettorsModal({ label, bettors, onClose, onPlayerClick }) {
+  return createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card bettors-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">Paris — {label}</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="bettors-list">
+          {bettors.map((p) => (
+            <div
+              key={p.pseudoId}
+              className="bettors-list-row"
+              onClick={() => { onClose(); onPlayerClick(p.pseudoId) }}
+            >
+              <AvatarDisplay avatar={p.avatar} size={36} />
+              <span className="bettors-list-name">{p.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+function ChallengeableModal({ bettors, onClose, onChallengeClick }) {
+  return createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card bettors-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">⚔ Qui défier ?</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="bettors-list">
+          {bettors.map((p) => (
+            <div key={p.pseudoId} className="bettors-list-row bettors-list-row--challenge">
+              <AvatarDisplay avatar={p.avatar} size={36} />
+              <span className="bettors-list-name">{p.name}</span>
+              <button
+                className="bet-bar-duel-btn"
+                style={{ marginLeft: 'auto', flexShrink: 0 }}
+                onClick={(e) => { e.stopPropagation(); onClose(); onChallengeClick(p.pseudoId) }}
+              >
+                ⚔ Défier
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
 
 function BetBar({ match, onPlayerClick, onChallengeClick }) {
   const { allBets, players, myBets, player, challenges, results } = useApp()
+  const [bettorsModal, setBettorsModal] = useState(null)
+  const [challengeModal, setChallengeModal] = useState(null)
   const knockout = isKnockout(match.phase)
   const finished = !!results[match.id]
   const myBet = myBets[match.id]
@@ -92,27 +149,45 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
     <div className="bet-bar">
       <div className="bet-bar-avatars">
         <div className="bet-bar-avatars-home">
-          {homeBettors.slice(0, MAX_AVATARS).map((p, i) => (
+          {homeBettors.slice(0, MAX_VISIBLE).map((p, i) => (
             <AvatarBtn key={i} p={p} />
           ))}
-          {homeBettors.length > MAX_AVATARS && (
-            <span className="bet-bar-avatar-more">+{homeBettors.length - MAX_AVATARS}</span>
+          {homeBettors.length > MAX_VISIBLE && (
+            <button
+              className="bet-bar-avatar bet-bar-avatar-more-btn"
+              onClick={(e) => { e.stopPropagation(); setBettorsModal({ label: abbrev(match.homeTeam), bettors: homeBettors }) }}
+            >
+              +{homeBettors.length - MAX_VISIBLE}
+            </button>
           )}
         </div>
         {!knockout && drawBettors.length > 0 && (
           <div className="bet-bar-avatars-draw">
-            {drawBettors.slice(0, 3).map((p, i) => (
+            {drawBettors.slice(0, MAX_VISIBLE).map((p, i) => (
               <AvatarBtn key={i} p={p} />
             ))}
+            {drawBettors.length > MAX_VISIBLE && (
+              <button
+                className="bet-bar-avatar bet-bar-avatar-more-btn"
+                onClick={(e) => { e.stopPropagation(); setBettorsModal({ label: 'Nul', bettors: drawBettors }) }}
+              >
+                +{drawBettors.length - MAX_VISIBLE}
+              </button>
+            )}
           </div>
         )}
         <div className="bet-bar-avatars-away">
-          {awayBettors.length > MAX_AVATARS && (
-            <span className="bet-bar-avatar-more">+{awayBettors.length - MAX_AVATARS}</span>
-          )}
-          {awayBettors.slice(0, MAX_AVATARS).map((p, i) => (
+          {awayBettors.slice(0, MAX_VISIBLE).map((p, i) => (
             <AvatarBtn key={i} p={p} />
           ))}
+          {awayBettors.length > MAX_VISIBLE && (
+            <button
+              className="bet-bar-avatar bet-bar-avatar-more-btn"
+              onClick={(e) => { e.stopPropagation(); setBettorsModal({ label: abbrev(match.awayTeam), bettors: awayBettors }) }}
+            >
+              +{awayBettors.length - MAX_VISIBLE}
+            </button>
+          )}
         </div>
       </div>
 
@@ -134,6 +209,22 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
         {pDraw > 0 && <div className="bet-bar-fill bet-bar-fill--draw" style={{ width: `${pDraw}%` }} />}
         {pAway > 0 && <div className="bet-bar-fill bet-bar-fill--away" style={{ width: `${pAway}%` }} />}
       </div>
+
+      {bettorsModal && (
+        <BettorsModal
+          label={bettorsModal.label}
+          bettors={bettorsModal.bettors}
+          onClose={() => setBettorsModal(null)}
+          onPlayerClick={onPlayerClick}
+        />
+      )}
+      {challengeModal && (
+        <ChallengeableModal
+          bettors={challengeModal}
+          onClose={() => setChallengeModal(null)}
+          onChallengeClick={onChallengeClick}
+        />
+      )}
 
       {/* Challenge pills — opponents on this match */}
       {!finished && myBet && player && onChallengeClick && (() => {
@@ -177,7 +268,12 @@ function BetBar({ match, onPlayerClick, onChallengeClick }) {
               </button>
             ))}
             {challengeable.length > 3 && (
-              <span className="bet-bar-duel-more">+{challengeable.length - 3}</span>
+              <button
+                className="bet-bar-duel-btn bet-bar-duel-btn--more"
+                onClick={(e) => { e.stopPropagation(); setChallengeModal(challengeable) }}
+              >
+                +{challengeable.length - 3}
+              </button>
             )}
             {pending.map((p) => (
               <button

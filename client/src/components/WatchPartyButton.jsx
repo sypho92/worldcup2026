@@ -35,9 +35,9 @@ export default function WatchPartyButton({ match, label = false }) {
       className={`watch-party-btn${error ? ' error' : ''}`}
       onClick={openParty}
       disabled={loading}
-      title="Clique pour ouvrir Discord et rejoindre la watch party"
+      title="Clique pour ouvrir Discord et rejoindre la fan zone"
     >
-      {loading ? '⏳ Ouverture...' : error ? '✕ Indispo' : label ? '👁 Watch party · Clique pour ouvrir Discord' : '👁'}
+      {loading ? '⏳ Ouverture...' : error ? '✕ Indispo' : label ? '👁 Fan zone · Clique pour ouvrir Discord' : '👁'}
     </button>
   )
 }

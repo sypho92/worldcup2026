@@ -305,12 +305,11 @@ export default function HomePage() {
 
   const wc = useMemo(() => {
     const diff = WC_START - new Date()
-    if (diff <= 0) return { started: true, days: 0, hours: 0, mins: 0 }
+    if (diff <= 0) return { started: true, totalHours: 0, mins: 0 }
     return {
       started: false,
-      days:  Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      mins:  Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+      totalHours: Math.floor(diff / (1000 * 60 * 60)),
+      mins: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
     }
   }, [])
 
@@ -377,8 +376,8 @@ export default function HomePage() {
               <span className="wc-pill-count wc-pill-count--live">En cours !</span>
             ) : (
               <span className="wc-pill-count">
-                J<span className="wc-pill-minus">−</span>{wc.days}
-                <span className="wc-pill-sub">{String(wc.hours).padStart(2,'0')}h{String(wc.mins).padStart(2,'0')}m</span>
+                H<span className="wc-pill-minus">−</span>{wc.totalHours}
+                <span className="wc-pill-sub">{String(wc.mins).padStart(2,'0')}m</span>
               </span>
             )}
           </div>
