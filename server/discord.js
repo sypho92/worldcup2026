@@ -4,30 +4,40 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const GUILD_ID = process.env.DISCORD_GUILD_ID
 const CATEGORY_NAME = '🍿 Watch Parties'
 
-let client = null
-let ready = false
-
-// inviteUrl cache per matchId — avoids creating a new invite on every click
 const inviteCache = new Map()
+
+let client = null
+let clientReady = false
+let connectPromise = null
 
 function isConfigured() {
   return Boolean(BOT_TOKEN && GUILD_ID)
 }
 
-async function getClient() {
-  if (!isConfigured()) throw new Error('DISCORD_BOT_TOKEN / DISCORD_GUILD_ID manquants dans .env')
-  if (client && ready) return client
+// Appelé une seule fois au démarrage du serveur
+function connect() {
+  if (!isConfigured()) {
+    console.warn('[Discord] DISCORD_BOT_TOKEN / DISCORD_GUILD_ID manquants — watch party désactivé')
+    return
+  }
+  if (connectPromise) return connectPromise
 
-  client = new Client({ intents: [GatewayIntentBits.Guilds] })
-  await client.login(BOT_TOKEN)
-  await new Promise((resolve, reject) => {
-    if (client.isReady()) return resolve()
-    client.once('clientReady', resolve)
-    client.once('error', reject)
-    setTimeout(() => reject(new Error('Discord login timeout')), 15000)
+  connectPromise = new Promise((resolve, reject) => {
+    client = new Client({ intents: [GatewayIntentBits.Guilds] })
+    client.once('ready', () => {
+      clientReady = true
+      console.log(`[Discord] Bot connecté : ${client.user.tag}`)
+      resolve()
+    })
+    client.on('error', (err) => console.error('[Discord] Erreur bot :', err))
+    client.login(BOT_TOKEN).catch(reject)
   })
-  ready = true
-  console.log(`Discord bot connecté : ${client.user.tag}`)
+
+  return connectPromise
+}
+
+function getClient() {
+  if (!clientReady || !client) throw new Error('Bot Discord non connecté')
   return client
 }
 
@@ -45,16 +55,13 @@ async function getOrCreateCategory(guild) {
   return guild.channels.create({ name: CATEGORY_NAME, type: ChannelType.GuildCategory })
 }
 
-/**
- * Creates (or reuses) a voice channel for the match and returns an invite URL.
- */
 async function createWatchParty(match) {
   const cached = inviteCache.get(match.id)
   if (cached && cached.expiresAt > Date.now()) return cached
 
-  const bot = await getClient()
+  const bot = getClient()
   const guild = await bot.guilds.fetch(GUILD_ID)
-  await guild.channels.fetch() // populate cache
+  await guild.channels.fetch()
 
   const category = await getOrCreateCategory(guild)
   const name = channelNameFor(match)
@@ -87,4 +94,4 @@ async function createWatchParty(match) {
   return result
 }
 
-module.exports = { createWatchParty, isConfigured }
+module.exports = { connect, createWatchParty, isConfigured }

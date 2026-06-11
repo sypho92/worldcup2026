@@ -6,6 +6,7 @@ const { db } = require('./firebase')
 const { startSync, syncNow } = require('./sync')
 const { fetchMatches, mapMatch, STAGE_TO_PHASE } = require('./footballData')
 const discord = require('./discord')
+discord.connect()
 
 const app = express()
 const PORT = process.env.PORT || 3001
