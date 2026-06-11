@@ -961,6 +961,29 @@ img, svg { display: block; }
   padding: 16px 0 4px;
 }
 
+.ppm-logout-wrap {
+  padding: 16px 20px 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.ppm-logout-btn {
+  width: 100%;
+  padding: 14px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+}
+.ppm-logout-btn:hover,
+.ppm-logout-btn:active {
+  background: #e74c3c;
+}
+
 .ppm-empty {
   color: var(--text-muted);
   font-size: 13px;

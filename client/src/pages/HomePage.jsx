@@ -121,7 +121,7 @@ function DateSection({ dateStr, dayMatches, nextMatchId }) {
 // ─── Modal édition profil ─────────────────────────────────────────────────────
 
 function ProfileEditModal({ onClose }) {
-  const { player, updateProfile } = useApp()
+  const { player, updateProfile, logout } = useApp()
   const [avatar, setAvatar] = useState(player?.avatar || AVATARS[0])
   const [name, setName] = useState(player?.name || '')
   const [saving, setSaving] = useState(false)
@@ -218,6 +218,12 @@ function ProfileEditModal({ onClose }) {
           <button className="btn-secondary" onClick={onClose}>Annuler</button>
           <button className="btn-primary" onClick={handleSave} disabled={saving}>
             {saving ? 'Sauvegarde...' : 'Enregistrer'}
+          </button>
+        </div>
+
+        <div className="ppm-logout-wrap">
+          <button className="ppm-logout-btn" onClick={() => { logout(); onClose() }}>
+            Se déconnecter
           </button>
         </div>
       </div>

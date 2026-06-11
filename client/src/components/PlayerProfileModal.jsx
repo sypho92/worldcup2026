@@ -16,7 +16,7 @@ const PHASES = [
 ]
 
 export default function PlayerProfileModal({ playerId, onClose }) {
-  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked, matches } = useApp()
+  const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked, matches, logout } = useApp()
   const [challengeMatchId, setChallengeMatchId] = useState(null)
   const [tab, setTab] = useState('paris')
 
@@ -178,6 +178,18 @@ export default function PlayerProfileModal({ playerId, onClose }) {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Logout — only for own profile */}
+        {me?.pseudoId === playerId && (
+          <div className="ppm-logout-wrap">
+            <button
+              className="ppm-logout-btn"
+              onClick={() => { logout(); onClose(); }}
+            >
+              Se déconnecter
+            </button>
           </div>
         )}
 
