@@ -168,9 +168,9 @@ app.post('/api/watchparty/:matchId', async (req, res) => {
     return res.status(503).json({ error: 'Discord non configuré (DISCORD_BOT_TOKEN / DISCORD_GUILD_ID)' })
   }
   try {
-    const snap = await db.ref(`matches/${matchId}`).once('value')
-    const match = snap.val()
-    if (!match) return res.status(404).json({ error: 'Match introuvable' })
+    const { homeTeam, awayTeam } = req.body
+    if (!homeTeam || !awayTeam) return res.status(400).json({ error: 'homeTeam/awayTeam requis' })
+    const match = { id: matchId, homeTeam, awayTeam }
     const party = await discord.createWatchParty(match)
     res.json({ success: true, ...party })
   } catch (err) {
