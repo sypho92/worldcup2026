@@ -3106,12 +3106,45 @@ img, svg { display: block; }
 .challenge-gage-text { color: var(--text-primary); font-style: italic; }
 
 /* ─── PlayerProfileModal — Oppositions section ──────────────────────────────── */
+.ppm-tabs {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 10px 0 2px;
+  margin-bottom: 4px;
+}
+.ppm-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s, background 0.15s;
+}
+.ppm-tab:hover { color: var(--text-primary); }
+.ppm-tab.active { background: var(--accent-dim); color: var(--accent); }
+.ppm-tab-badge {
+  background: var(--accent);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
 .ppm-oppositions {
   margin-bottom: 16px;
   background: rgba(212, 152, 30, 0.04);
   border: 1px solid rgba(212, 152, 30, 0.2);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  flex-shrink: 0;
 }
 .ppm-section-label {
   font-family: var(--font-display);
@@ -3125,8 +3158,8 @@ img, svg { display: block; }
 }
 .ppm-opposition-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--border);
 }
@@ -3137,10 +3170,11 @@ img, svg { display: block; }
   gap: 4px;
   font-size: 12px;
   color: var(--text-secondary);
-  flex: 1;
-  min-width: 0;
-  flex-wrap: nowrap;
-  overflow: hidden;
+}
+.ppm-opp-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .ppm-opp-sep { color: var(--text-muted); }
 .ppm-opp-bets {
@@ -4333,6 +4367,27 @@ img, svg { display: block; }
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ─── Admin: dashboard ───────────────────────────────────────────────────────── */
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+.admin-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.admin-stat-icon { font-size: 28px; }
+.admin-stat-value { font-size: 36px; font-weight: 700; color: var(--accent); }
+.admin-stat-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
 
 /* ─── Admin: player list ──────────────────────────────────────────────────────── */
 .admin-players-hint {

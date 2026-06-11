@@ -243,6 +243,35 @@ function AdminMatchRow({ match, adminPwd, onSuccess }) {
   )
 }
 
+function DashboardTab() {
+  const { players, allBets, challenges } = useApp()
+
+  const totalPlayers = Object.keys(players).length
+  const totalBets = useMemo(
+    () => Object.values(allBets).reduce((sum, bets) => sum + Object.keys(bets).length, 0),
+    [allBets]
+  )
+  const totalChallenges = Object.keys(challenges).length
+
+  const stats = [
+    { label: 'Joueurs', value: totalPlayers, icon: '👥' },
+    { label: 'Paris', value: totalBets, icon: '🎯' },
+    { label: 'Défis', value: totalChallenges, icon: '⚔️' },
+  ]
+
+  return (
+    <div className="admin-dashboard">
+      {stats.map(({ label, value, icon }) => (
+        <div key={label} className="admin-stat-card">
+          <span className="admin-stat-icon">{icon}</span>
+          <span className="admin-stat-value">{value}</span>
+          <span className="admin-stat-label">{label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const { matches } = useApp()
   const [authenticated, setAuthenticated] = useState(false)
@@ -251,7 +280,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [activePhase, setActivePhase] = useState('group')
-  const [adminTab, setAdminTab] = useState('results') // 'results' | 'players'
+  const [adminTab, setAdminTab] = useState('results') // 'results' | 'players' | 'dashboard'
 
   async function handleAuth(e) {
     e.preventDefault()
@@ -329,9 +358,17 @@ export default function AdminPage() {
         >
           👥 Joueurs
         </button>
+        <button
+          className={`admin-main-tab ${adminTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setAdminTab('dashboard')}
+        >
+          📊 Dashboard
+        </button>
       </div>
 
-      {adminTab === 'players' ? (
+      {adminTab === 'dashboard' ? (
+        <DashboardTab />
+      ) : adminTab === 'players' ? (
         <PlayerManager />
       ) : (
         <>

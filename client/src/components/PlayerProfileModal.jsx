@@ -18,6 +18,7 @@ const PHASES = [
 export default function PlayerProfileModal({ playerId, onClose }) {
   const { players, allBets, results, scoreboard, player: me, myBets, challenges, isMatchLocked, matches } = useApp()
   const [challengeMatchId, setChallengeMatchId] = useState(null)
+  const [tab, setTab] = useState('paris')
 
   const player = players[playerId]
   const playerBets = allBets[playerId] || {}
@@ -83,10 +84,21 @@ export default function PlayerProfileModal({ playerId, onClose }) {
           </div>
         </div>
 
-        {/* Matchs opposés — invitation à défier */}
+        {/* Tabs */}
         {oppositeMatches.length > 0 && (
-          <div className="ppm-oppositions">
-            <div className="ppm-section-label">⚔ Paris opposés</div>
+          <div className="ppm-tabs">
+            <button className={`ppm-tab ${tab === 'paris' ? 'active' : ''}`} onClick={() => setTab('paris')}>
+              Paris
+            </button>
+            <button className={`ppm-tab ${tab === 'oppositions' ? 'active' : ''}`} onClick={() => setTab('oppositions')}>
+              ⚔ Défis <span className="ppm-tab-badge">{oppositeMatches.length}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Paris opposés */}
+        {(oppositeMatches.length === 0 || tab === 'oppositions') && oppositeMatches.length > 0 && (
+          <div className="ppm-bets">
             {oppositeMatches.map((m) => {
               const myBet = myBets[m.id]
               const theirBet = playerBets[m.id]
@@ -95,8 +107,6 @@ export default function PlayerProfileModal({ playerId, onClose }) {
               const id1 = `${m.id}_${me.pseudoId}_vs_${playerId}`
               const id2 = `${m.id}_${playerId}_vs_${me.pseudoId}`
               const existing = challenges[id1] || challenges[id2]
-              const locked = isMatchLocked(m)
-
               return (
                 <div key={m.id} className="ppm-opposition-row">
                   <div className="ppm-opp-match">
@@ -106,25 +116,24 @@ export default function PlayerProfileModal({ playerId, onClose }) {
                     <span>{abbrev(m.awayTeam)}</span>
                     <Flag flag={m.awayTeam.flag} size={13} />
                   </div>
-                  <div className="ppm-opp-bets">
-                    <span className="ppm-opp-mine">{myTeam ? abbrev(myTeam) : 'Nul'}</span>
-                    <span className="ppm-opp-sword">⚔</span>
-                    <span className="ppm-opp-theirs">{theirTeam ? abbrev(theirTeam) : 'Nul'}</span>
+                  <div className="ppm-opp-bottom">
+                    <div className="ppm-opp-bets">
+                      <span className="ppm-opp-mine">{myTeam ? abbrev(myTeam) : 'Nul'}</span>
+                      <span className="ppm-opp-sword">⚔</span>
+                      <span className="ppm-opp-theirs">{theirTeam ? abbrev(theirTeam) : 'Nul'}</span>
+                    </div>
+                    {existing && existing.status !== 'rejected' ? (
+                      <span className={`ppm-opp-status ppm-opp-status--${existing.status}`}>
+                        {existing.status === 'accepted' ? '⚔ Actif' : '⏳ En attente'}
+                      </span>
+                    ) : m.utcDate && Date.now() >= new Date(m.utcDate).getTime() ? (
+                      <span className="ppm-opp-locked">🔒 Live</span>
+                    ) : (
+                      <button className="ppm-opp-challenge-btn" onClick={() => setChallengeMatchId(m.id)}>
+                        ⚔ Défier
+                      </button>
+                    )}
                   </div>
-                  {locked ? (
-                    <span className="ppm-opp-locked">🔒 Live</span>
-                  ) : existing && existing.status !== 'rejected' ? (
-                    <span className={`ppm-opp-status ppm-opp-status--${existing.status}`}>
-                      {existing.status === 'accepted' ? '⚔ Actif' : '⏳ En attente'}
-                    </span>
-                  ) : (
-                    <button
-                      className="ppm-opp-challenge-btn"
-                      onClick={() => setChallengeMatchId(m.id)}
-                    >
-                      ⚔ Défier
-                    </button>
-                  )}
                 </div>
               )
             })}
@@ -132,61 +141,45 @@ export default function PlayerProfileModal({ playerId, onClose }) {
         )}
 
         {/* Bets list */}
-        <div className="ppm-bets">
-          {phases.length === 0 ? (
-            <p className="ppm-empty">Aucun pari encore placé</p>
-          ) : (
-            phases.map((phase) => (
-              <div key={phase.key} className="ppm-phase">
-                <div className="ppm-phase-label">{phase.label}</div>
-                {phase.matches.map((match) => {
-                  const bet = playerBets[match.id]
-                  const result = results[match.id]
-                  const isCorrect = result && bet === result.winner
-                  const isWrong = result && !isCorrect
-
-                  const betTeam =
-                    bet === 'home' ? match.homeTeam
-                    : bet === 'away' ? match.awayTeam
-                    : null
-
-                  return (
-                    <div
-                      key={match.id}
-                      className={`ppm-bet-row${isCorrect ? ' correct' : isWrong ? ' wrong' : ''}`}
-                    >
-                      {/* Équipes */}
-                      <div className="ppm-bet-teams">
-                        <Flag flag={match.homeTeam.flag} size={14} />
-                        <span>{abbrev(match.homeTeam)}</span>
-                        <span className="ppm-bet-vs">—</span>
-                        <span>{abbrev(match.awayTeam)}</span>
-                        <Flag flag={match.awayTeam.flag} size={14} />
+        {(oppositeMatches.length === 0 || tab === 'paris') && (
+          <div className="ppm-bets">
+            {phases.length === 0 ? (
+              <p className="ppm-empty">Aucun pari encore placé</p>
+            ) : (
+              phases.map((phase) => (
+                <div key={phase.key} className="ppm-phase">
+                  <div className="ppm-phase-label">{phase.label}</div>
+                  {phase.matches.map((match) => {
+                    const bet = playerBets[match.id]
+                    const result = results[match.id]
+                    const isCorrect = result && bet === result.winner
+                    const isWrong = result && !isCorrect
+                    const betTeam = bet === 'home' ? match.homeTeam : bet === 'away' ? match.awayTeam : null
+                    return (
+                      <div key={match.id} className={`ppm-bet-row${isCorrect ? ' correct' : isWrong ? ' wrong' : ''}`}>
+                        <div className="ppm-bet-teams">
+                          <Flag flag={match.homeTeam.flag} size={14} />
+                          <span>{abbrev(match.homeTeam)}</span>
+                          <span className="ppm-bet-vs">—</span>
+                          <span>{abbrev(match.awayTeam)}</span>
+                          <Flag flag={match.awayTeam.flag} size={14} />
+                        </div>
+                        <div className="ppm-bet-pick">
+                          {bet === 'draw' ? (
+                            <span className="ppm-bet-draw">Nul</span>
+                          ) : betTeam ? (
+                            <><Flag flag={betTeam.flag} size={14} /><span>{abbrev(betTeam)}</span></>
+                          ) : null}
+                          {result && <span className={isCorrect ? 'ppm-ok' : 'ppm-bad'}>{isCorrect ? '✓' : '✗'}</span>}
+                        </div>
                       </div>
-
-                      {/* Pari choisi */}
-                      <div className="ppm-bet-pick">
-                        {bet === 'draw' ? (
-                          <span className="ppm-bet-draw">Nul</span>
-                        ) : betTeam ? (
-                          <>
-                            <Flag flag={betTeam.flag} size={14} />
-                            <span>{abbrev(betTeam)}</span>
-                          </>
-                        ) : null}
-                        {result && (
-                          <span className={isCorrect ? 'ppm-ok' : 'ppm-bad'}>
-                            {isCorrect ? '✓' : '✗'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ))
-          )}
-        </div>
+                    )
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
       </div>
 
