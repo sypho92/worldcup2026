@@ -14,7 +14,11 @@ export default function WatchPartyButton({ match, label = false }) {
     setLoading(true)
     setError(false)
     try {
-      const res = await fetch(`/api/watchparty/${match.id}`, { method: 'POST' })
+      const res = await fetch(`/api/watchparty/${match.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ homeTeam: match.homeTeam, awayTeam: match.awayTeam }),
+      })
       const data = await res.json()
       if (res.ok && data.inviteUrl) {
         window.open(data.inviteUrl, '_blank')
