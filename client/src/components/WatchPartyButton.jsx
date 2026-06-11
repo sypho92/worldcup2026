@@ -4,7 +4,6 @@ export default function WatchPartyButton({ match, label = false }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
-  // Visible uniquement pour les matchs du jour
   const today = new Date().toLocaleDateString('en-CA')
   if (match.date !== today) return null
 
@@ -13,6 +12,10 @@ export default function WatchPartyButton({ match, label = false }) {
     if (loading) return
     setLoading(true)
     setError(false)
+
+    // Ouvrir AVANT le fetch pour contourner le blocage popup navigateur
+    const newWindow = window.open('', '_blank')
+
     try {
       const res = await fetch(`/api/watchparty/${match.id}`, {
         method: 'POST',
@@ -21,12 +24,14 @@ export default function WatchPartyButton({ match, label = false }) {
       })
       const data = await res.json()
       if (res.ok && data.inviteUrl) {
-        window.open(data.inviteUrl, '_blank')
+        newWindow.location.href = data.inviteUrl
       } else {
+        newWindow.close()
         setError(true)
         setTimeout(() => setError(false), 3000)
       }
     } catch {
+      newWindow.close()
       setError(true)
       setTimeout(() => setError(false), 3000)
     } finally {
