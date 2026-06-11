@@ -19,10 +19,8 @@ export default function WCBanner() {
       <div className="wc-banner-inner">
         <img src="/wc-logo.png.png" alt="WC 2026" className="wc-banner-logo" />
         <span className="wc-banner-title">Coupe du Monde FIFA 26</span>
-        <span className="wc-banner-divider" />
-        {started ? (
-          <span className="wc-banner-countdown wc-banner-countdown--live">En cours !</span>
-        ) : (
+        {!started && <span className="wc-banner-divider" />}
+        {!started && (
           <span className="wc-banner-countdown">
             J<span className="wc-banner-sep">−</span>{days}
             <span className="wc-banner-sub">{String(hours).padStart(2,'0')}h{String(minutes).padStart(2,'0')}m</span>

@@ -416,7 +416,7 @@ export default function ScheduleRow({ match, entryDelay = 0 }) {
         // En cours ou PAUSED mais >63 min écoulées → on estime que la 2e mi-temps a repris
         <div className="sched-time-badge sched-time-badge--live">
           <span className="sched-badge-status sched-badge-status--live">
-            {`${displayMinute}'`}
+            {match.minuteExtra ? `${displayMinute}+${match.minuteExtra}'` : `${displayMinute}'`}
           </span>
         </div>
       ) : !locked ? (

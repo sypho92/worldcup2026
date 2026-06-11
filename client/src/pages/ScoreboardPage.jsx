@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { computeAllGroupStandings } from '../utils/standings'
 import Flag from '../components/Flag'
@@ -126,43 +126,19 @@ function GroupTable({ groupId, teams, groupMatches, results }) {
   )
 }
 
-const RANKS_KEY = 'wc2026_prev_ranks'
-
 function RankArrow({ delta }) {
-  if (delta === null) return null
+  if (delta === null || delta === undefined) return null
   if (delta > 0) return <span style={{ color: '#22c55e', fontSize: 12, marginLeft: 3 }}>▲</span>
   if (delta < 0) return <span style={{ color: '#ef4444', fontSize: 12, marginLeft: 3 }}>▼</span>
   return <span style={{ color: 'var(--text-secondary)', fontSize: 12, marginLeft: 3 }}>–</span>
 }
 
 export default function ScoreboardPage() {
-  const { player, scoreboard, results, matches, groupsData } = useApp()
+  const { player, scoreboard, results, matches, groupsData, scoreboardSnapshot } = useApp()
   const [showGroups, setShowGroups] = useState(false)
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
 
   const board = useMemo(() => scoreboard(), [scoreboard])
-
-  const finishedCount = useMemo(() => matches.filter((m) => m.result).length, [matches])
-  const prevCountRef = useRef(null)
-
-  const [prevRanks, setPrevRanks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(RANKS_KEY)) || {} } catch { return {} }
-  })
-
-  useEffect(() => {
-    if (prevCountRef.current === null) {
-      prevCountRef.current = finishedCount
-      return
-    }
-    if (finishedCount !== prevCountRef.current) {
-      // Sauvegarde le nouveau classement pour la prochaine session
-      // (on ne touche PAS à prevRanks → les flèches restent visibles cette session)
-      const snapshot = {}
-      board.forEach((p, i) => { snapshot[p.pseudoId] = i + 1 })
-      localStorage.setItem(RANKS_KEY, JSON.stringify(snapshot))
-      prevCountRef.current = finishedCount
-    }
-  }, [finishedCount, board])
 
   return (
     <div className="page">
@@ -214,7 +190,7 @@ export default function ScoreboardPage() {
                       <span className={`lt-rank ${i < 3 ? 'lt-rank--top' : ''}`}>
                         {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                       </span>
-                      <RankArrow delta={prevRanks[p.pseudoId] != null ? prevRanks[p.pseudoId] - (i + 1) : null} />
+                      <RankArrow delta={scoreboardSnapshot[p.pseudoId] != null ? scoreboardSnapshot[p.pseudoId] - (i + 1) : null} />
                     </td>
                     <td className="lt-col-player">
                       <AvatarDisplay avatar={p.avatar} size={38} />

@@ -60,6 +60,7 @@ export function AppProvider({ children }) {
   const [players, setPlayers] = useState({})
   const [results, setResults] = useState({})
   const [challenges, setChallenges] = useState({})
+  const [scoreboardSnapshot, setScoreboardSnapshot] = useState({})
   const [loading, setLoading] = useState(true)
   const [parisNow, setParisNow] = useState(getParisNow)
 
@@ -130,6 +131,14 @@ export function AppProvider({ children }) {
     const challengesRef = ref(db, 'challenges')
     const unsub = onValue(challengesRef, (snap) => {
       setChallenges(snap.val() || {})
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    const snapshotRef = ref(db, 'scoreboard_snapshot')
+    const unsub = onValue(snapshotRef, (snap) => {
+      setScoreboardSnapshot(snap.val() || {})
     })
     return () => unsub()
   }, [])
@@ -331,6 +340,7 @@ export function AppProvider({ children }) {
         players,
         results,
         challenges,
+        scoreboardSnapshot,
         loading,
         placeBet,
         sendChallenge,

@@ -371,10 +371,10 @@ export default function HomePage() {
           <div className="wc-pill">
             <img src="/wc-logo.png.png" alt="WC 2026" className="wc-pill-logo" />
             <span className="wc-pill-title">Coupe du Monde FIFA 26</span>
-            <span className="wc-pill-div" />
-            {wc.started ? (
-              <span className="wc-pill-count wc-pill-count--live">En cours !</span>
-            ) : (
+            {!wc.started && (
+              <span className="wc-pill-div" />
+            )}
+            {!wc.started && (
               <span className="wc-pill-count">
                 H<span className="wc-pill-minus">−</span>{wc.totalHours}
                 <span className="wc-pill-sub">{String(wc.mins).padStart(2,'0')}m</span>

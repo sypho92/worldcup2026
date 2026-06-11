@@ -171,6 +171,7 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
         hasLive = true
         updates.status = 'IN_PLAY'
         updates.minute = live.elapsed ?? null
+        updates.minuteExtra = live.extra ?? null
         updates['score/fullTime/home'] = live.homeScore
         updates['score/fullTime/away'] = live.awayScore
 

@@ -32,6 +32,38 @@ app.post('/api/auth/admin', (req, res) => {
 })
 
 // Write match result (admin only)
+const PHASE_PTS = { group: 1, demo: 1, liga: 1, pl: 1, test: 1, cl_final: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }
+
+async function snapshotRanks() {
+  const [playersSnap, betsSnap, matchesSnap] = await Promise.all([
+    db.ref('players').get(),
+    db.ref('bets').get(),
+    db.ref('matches').get(),
+  ])
+  if (!playersSnap.exists()) return
+
+  const players = playersSnap.val()
+  const allBets = betsSnap.exists() ? betsSnap.val() : {}
+  const matches = matchesSnap.exists() ? Object.entries(matchesSnap.val()) : []
+
+  const scores = Object.keys(players).map((pseudoId) => {
+    const playerBets = allBets[pseudoId] || {}
+    let total = 0, correct = 0, wrong = 0
+    matches.forEach(([matchId, m]) => {
+      const result = m.result
+      const bet = playerBets[matchId]
+      if (!result || !bet) return
+      if (bet === result.winner) { total += PHASE_PTS[m.phase] ?? 1; correct++ }
+      else wrong++
+    })
+    return { pseudoId, total, correct, wrong }
+  }).sort((a, b) => b.total - a.total || a.wrong - b.wrong || b.correct - a.correct)
+
+  const snapshot = {}
+  scores.forEach((p, i) => { snapshot[p.pseudoId] = i + 1 })
+  await db.ref('scoreboard_snapshot').set(snapshot)
+}
+
 app.post('/api/results/:matchId', async (req, res) => {
   const { password, homeScore, awayScore, homeTeam, awayTeam } = req.body
   const { matchId } = req.params
@@ -56,6 +88,7 @@ app.post('/api/results/:matchId', async (req, res) => {
   else winner = 'draw'
 
   try {
+    await snapshotRanks()
     await db.ref(`matches/${matchId}`).update({
       result: { homeScore: hs, awayScore: as, winner },
       'score/winner': winner,
