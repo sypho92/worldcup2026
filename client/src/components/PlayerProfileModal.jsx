@@ -2,7 +2,8 @@ import { useEffect, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { AvatarDisplay } from './AvatarDisplay'
 
-export default function PlayerProfileModal({ pseudoId, onClose }) {
+export default function PlayerProfileModal({ pseudoId, playerId, onClose }) {
+  const id = pseudoId || playerId
   const { players, computePoints, scoreboard } = useApp()
 
   useEffect(() => {
@@ -11,13 +12,13 @@ export default function PlayerProfileModal({ pseudoId, onClose }) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const playerData = players[pseudoId]
-  const stats = useMemo(() => computePoints(pseudoId), [computePoints, pseudoId])
+  const playerData = players[id]
+  const stats = useMemo(() => computePoints(id), [computePoints, id])
   const rank = useMemo(() => {
     const board = scoreboard()
-    const idx = board.findIndex((p) => p.pseudoId === pseudoId)
+    const idx = board.findIndex((p) => p.pseudoId === id)
     return idx === -1 ? null : idx + 1
-  }, [scoreboard, pseudoId])
+  }, [scoreboard, id])
 
   if (!playerData) return null
 

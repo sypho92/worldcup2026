@@ -193,7 +193,7 @@ export default function ScoreboardPage() {
                     </td>
                     <td className="lt-col-player">
                       <RankArrow delta={scoreboardSnapshot[p.pseudoId] != null ? scoreboardSnapshot[p.pseudoId] - (i + 1) : null} />
-                      <AvatarDisplay avatar={p.avatar} size={38} />
+                      <AvatarDisplay avatar={p.avatar} size={38} onClick={() => setViewedPlayerId(p.pseudoId)} />
                       <span className="lt-name">{formatPlayerName(p.name)}</span>
                     </td>
                     <td className="lt-col-stat lt-val">{played}</td>
