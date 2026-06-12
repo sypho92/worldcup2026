@@ -32,7 +32,7 @@ app.post('/api/auth/admin', (req, res) => {
 })
 
 // Write match result (admin only)
-const PHASE_PTS = { group: 1, demo: 1, liga: 1, pl: 1, test: 1, cl_final: 1, r32: 2, r16: 3, qf: 4, sf: 5, third: 3, final: 6 }
+const PHASE_PTS = { group: 1, demo: 1, liga: 1, pl: 1, test: 1, cl_final: 1, r32: 1, r16: 1, qf: 1, sf: 1, third: 1, final: 1 }
 
 async function snapshotRanks() {
   const [playersSnap, betsSnap, matchesSnap] = await Promise.all([
@@ -57,7 +57,7 @@ async function snapshotRanks() {
       else wrong++
     })
     return { pseudoId, total, correct, wrong }
-  }).sort((a, b) => b.total - a.total || a.wrong - b.wrong || b.correct - a.correct)
+  }).sort((a, b) => b.correct - a.correct || (b.correct + b.wrong) - (a.correct + a.wrong))
 
   const snapshot = {}
   scores.forEach((p, i) => { snapshot[p.pseudoId] = i + 1 })
