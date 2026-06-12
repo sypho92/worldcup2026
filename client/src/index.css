@@ -4958,7 +4958,7 @@ img, svg { display: block; }
 .feed-header { display: flex; align-items: center; gap: 8px; }
 .feed-name { font-size: 12px; font-weight: 700; color: var(--accent); }
 .feed-time { font-size: 11px; color: var(--text-muted); }
-.feed-text { font-size: 14px; color: var(--text-primary); word-break: break-word; line-height: 1.45; }
+.feed-text { font-size: 14px; color: var(--text-primary); word-break: break-word; line-height: 1.45; white-space: pre-wrap; }
 .feed-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .feed-chip {
   background: var(--bg-card-2); border: 1px solid var(--border);
@@ -5019,11 +5019,17 @@ img, svg { display: block; }
   flex: 1;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 16px;
   padding: 10px 16px;
   font-size: 14px;
   color: var(--text-primary);
   outline: none;
+  resize: none;
+  font-family: var(--font-body);
+  line-height: 1.45;
+  max-height: 160px;
+  overflow-y: auto;
+  field-sizing: content;
 }
 .feed-input:focus { border-color: var(--accent); }
 .feed-send {

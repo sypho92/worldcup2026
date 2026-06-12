@@ -215,12 +215,14 @@ export default function FeedPage() {
               onClick={() => fileInputRef.current?.click()}
             >+</button>
             <AvatarDisplay avatar={player.avatar} size={32} />
-            <input
+            <textarea
               className="feed-input"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Exprime-toi..."
-              maxLength={500}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e) } }}
+              placeholder="Exprime-toi... (Shift+Entrée pour sauter une ligne)"
+              maxLength={1000}
+              rows={1}
               disabled={sending}
             />
             <button className="feed-send" type="submit" disabled={(!text.trim() && !image) || sending}>↑</button>
