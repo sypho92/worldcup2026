@@ -218,9 +218,9 @@ export default function FeedPage() {
             <textarea
               className="feed-input"
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e) } }}
-              placeholder="Exprime-toi... (Shift+Entrée pour sauter une ligne)"
+              onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px' }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(e) } }}
+              placeholder="Exprime-toi... (Ctrl+Entrée pour envoyer)"
               maxLength={1000}
               rows={1}
               disabled={sending}
