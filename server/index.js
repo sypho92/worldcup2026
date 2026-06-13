@@ -57,7 +57,7 @@ async function snapshotRanks() {
       else wrong++
     })
     return { pseudoId, total, correct, wrong }
-  }).sort((a, b) => b.correct - a.correct || (b.correct + b.wrong) - (a.correct + a.wrong))
+  }).sort((a, b) => b.total - a.total || b.correct - a.correct || (b.correct + b.wrong) - (a.correct + a.wrong))
 
   const snapshot = {}
   scores.forEach((p, i) => { snapshot[p.pseudoId] = i + 1 })

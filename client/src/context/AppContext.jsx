@@ -309,7 +309,7 @@ export function AppProvider({ children }) {
           wrongBets: wrong,
         }
       })
-      .sort((a, b) => b.correctBets - a.correctBets || (b.correctBets + b.wrongBets) - (a.correctBets + a.wrongBets))
+      .sort((a, b) => b.points - a.points || b.correctBets - a.correctBets || (b.correctBets + b.wrongBets) - (a.correctBets + a.wrongBets))
   }, [players, computePoints])
 
   const myPoints = useMemo(
