@@ -122,8 +122,6 @@ export default function PlayerProfileModal({ pseudoId, playerId, onClose }) {
                       <span className={`ppm-opp-status ppm-opp-status--${existing.status}`}>
                         {existing.status === 'accepted' ? '⚔ Actif' : '⏳ En attente'}
                       </span>
-                    ) : m.utcDate && Date.now() >= new Date(m.utcDate).getTime() ? (
-                      <span className="ppm-opp-locked">🔒 Live</span>
                     ) : (
                       <button className="ppm-opp-challenge-btn" onClick={() => setChallengeMatchId(m.id)}>
                         ⚔ Défier
