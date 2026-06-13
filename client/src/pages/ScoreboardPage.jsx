@@ -137,12 +137,36 @@ export default function ScoreboardPage() {
   const { player, scoreboard, results, matches, groupsData, scoreboardSnapshot } = useApp()
   const [showGroups, setShowGroups] = useState(false)
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
+  const [showInfo, setShowInfo] = useState(false)
 
   const board = useMemo(() => scoreboard(), [scoreboard])
 
   return (
     <div className="page">
       <h1 className="page-title">Classement</h1>
+
+      <button className="sb-info-badge" onClick={() => setShowInfo(true)}>
+        ℹ️ Informations sur le classement
+      </button>
+
+      {showInfo && (
+        <div className="ppm-overlay" onClick={() => setShowInfo(false)}>
+          <div className="sb-info-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sb-info-modal-header">
+              <span>ℹ️ Informations sur le classement</span>
+              <button className="ppm-close" onClick={() => setShowInfo(false)}>✕</button>
+            </div>
+            <p className="sb-info-desc">Tournoi entre amis / famille — pronostic simple.</p>
+            <ul className="sb-info-list">
+              <li>1 point par bon pronostic</li>
+              <li>Quitte ou double : +2 pts pour le gagnant, 0 pour le perdant</li>
+              <li>Possibilité de lancer des défis entre joueurs</li>
+              <li>Ordre : plus de points = mieux classé — à égalité, le plus de matchs joués l'emporte</li>
+            </ul>
+            <p className="sb-info-thanks">Merci de participer ! 🎉</p>
+          </div>
+        </div>
+      )}
 
       {viewedPlayerId && (
         <PlayerProfileModal

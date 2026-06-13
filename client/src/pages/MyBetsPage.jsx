@@ -13,7 +13,7 @@ const PHASES = [
   { key: 'final', label: 'Finale' },
 ]
 
-function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
+function PhaseSection({ phaseKey, phaseLabel, phaseMatches, nextMatchId }) {
   const [open, setOpen] = useState(true)
   const { myBets } = useApp()
 
@@ -36,7 +36,7 @@ function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
       {open && (
         <div className="sched-day">
           {phaseMatches.map((m, i) => (
-            <ScheduleRow key={m.id} match={m} entryDelay={Math.min(i, 5) * 0.06} />
+            <ScheduleRow key={m.id} match={m} entryDelay={Math.min(i, 5) * 0.06} isNextMatch={m.id === nextMatchId} />
           ))}
         </div>
       )}
@@ -45,7 +45,7 @@ function PhaseSection({ phaseKey, phaseLabel, phaseMatches }) {
 }
 
 export default function MyBetsPage() {
-  const { myBets, matches } = useApp()
+  const { myBets, matches, results } = useApp()
   const totalBets = Object.keys(myBets).length
 
   const matchesByPhase = useMemo(() => {
@@ -56,6 +56,13 @@ export default function MyBetsPage() {
     })
     return map
   }, [matches])
+
+  const nextMatchId = useMemo(() => {
+    const upcoming = matches
+      .filter((m) => !results[m.id] && m.utcDate)
+      .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
+    return upcoming[0]?.id ?? null
+  }, [matches, results])
 
   return (
     <div className="page sched-page">
@@ -71,6 +78,7 @@ export default function MyBetsPage() {
             phaseKey={p.key}
             phaseLabel={p.label}
             phaseMatches={matchesByPhase[p.key]}
+            nextMatchId={nextMatchId}
           />
         ) : null
       )}
