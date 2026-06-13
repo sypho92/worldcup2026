@@ -163,6 +163,7 @@ export default function ScoreboardPage() {
               <li>Possibilité de lancer des défis entre joueurs</li>
               <li>Ordre : plus de points = mieux classé — à égalité, le plus de matchs joués l'emporte</li>
             </ul>
+            <p className="sb-info-prize">👕 Un maillot à gagner pour le premier !</p>
             <p className="sb-info-thanks">Merci de participer ! 🎉</p>
           </div>
         </div>
