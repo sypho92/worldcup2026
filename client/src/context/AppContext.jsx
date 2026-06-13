@@ -215,7 +215,8 @@ export function AppProvider({ children }) {
             c.matchId === matchId &&
             c.type === 'double' &&
             ACTIVE.includes(c.status) &&
-            (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
+            (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId ||
+             c.challengerId === challengedId || c.challengedId === challengedId)
         )
         if (hasDouble) throw new Error('Un quitte ou double actif existe déjà sur ce match')
       }

@@ -23,14 +23,15 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
   const existingId2 = `${matchId}_${challengedId}_vs_${player?.pseudoId}`
   const existing = challenges[existingId1] || challenges[existingId2]
 
-  // Check if current player already has an active "quitte ou double" on this match (with anyone)
+  // Check if current player OR challenged player already has an active "quitte ou double" on this match
   const ACTIVE = ['pending', 'accepted', 'cancel_requested']
   const alreadyHasDouble = !existing && Object.values(challenges).some(
     (c) =>
       c.matchId === matchId &&
       c.type === 'double' &&
       ACTIVE.includes(c.status) &&
-      (c.challengerId === player?.pseudoId || c.challengedId === player?.pseudoId)
+      (c.challengerId === player?.pseudoId || c.challengedId === player?.pseudoId ||
+       c.challengerId === challengedId || c.challengedId === challengedId)
   )
 
   useEffect(() => {
