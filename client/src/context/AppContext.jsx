@@ -208,6 +208,17 @@ export function AppProvider({ children }) {
   const sendChallenge = useCallback(
     async ({ matchId, challengedId, type, gage }) => {
       if (!player) return
+      if (type === 'double') {
+        const ACTIVE = ['pending', 'accepted', 'cancel_requested']
+        const hasDouble = Object.values(challenges).some(
+          (c) =>
+            c.matchId === matchId &&
+            c.type === 'double' &&
+            ACTIVE.includes(c.status) &&
+            (c.challengerId === player.pseudoId || c.challengedId === player.pseudoId)
+        )
+        if (hasDouble) throw new Error('Un quitte ou double actif existe déjà sur ce match')
+      }
       const challengeId = `${matchId}_${player.pseudoId}_vs_${challengedId}`
       await set(ref(db, `challenges/${challengeId}`), {
         matchId,
@@ -220,7 +231,7 @@ export function AppProvider({ children }) {
       })
       return challengeId
     },
-    [player]
+    [player, challenges]
   )
 
   const respondToChallenge = useCallback(async (challengeId, response) => {

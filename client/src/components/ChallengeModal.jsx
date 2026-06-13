@@ -18,10 +18,20 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
   const myBet = myBets[matchId]
   const theirBet = allBets[challengedId]?.[matchId]
 
-  // Check existing challenge
+  // Check existing challenge between these two players
   const existingId1 = `${matchId}_${player?.pseudoId}_vs_${challengedId}`
   const existingId2 = `${matchId}_${challengedId}_vs_${player?.pseudoId}`
   const existing = challenges[existingId1] || challenges[existingId2]
+
+  // Check if current player already has an active "quitte ou double" on this match (with anyone)
+  const ACTIVE = ['pending', 'accepted', 'cancel_requested']
+  const alreadyHasDouble = !existing && Object.values(challenges).some(
+    (c) =>
+      c.matchId === matchId &&
+      c.type === 'double' &&
+      ACTIVE.includes(c.status) &&
+      (c.challengerId === player?.pseudoId || c.challengedId === player?.pseudoId)
+  )
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
@@ -128,12 +138,13 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
             {/* Type selector */}
             <div className="challenge-type-row">
               <button
-                className={`challenge-type-btn${type === 'double' ? ' active' : ''}`}
-                onClick={() => setType('double')}
+                className={`challenge-type-btn${type === 'double' ? ' active' : ''}${alreadyHasDouble ? ' disabled' : ''}`}
+                onClick={() => !alreadyHasDouble && setType('double')}
+                title={alreadyHasDouble ? 'Tu as déjà un quitte ou double actif sur ce match' : ''}
               >
                 <span className="challenge-type-icon">🎯</span>
                 <span className="challenge-type-name">Quitte ou double</span>
-                <span className="challenge-type-desc">+1 pt pour le gagnant</span>
+                <span className="challenge-type-desc">{alreadyHasDouble ? '⚠ Déjà actif' : '+2 pts pour le gagnant'}</span>
               </button>
               <button
                 className={`challenge-type-btn${type === 'gage' ? ' active' : ''}`}

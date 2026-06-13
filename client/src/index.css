@@ -3211,6 +3211,10 @@ img, svg { display: block; }
   border-color: var(--accent);
   background: rgba(212, 152, 30, 0.1);
 }
+.challenge-type-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .challenge-type-icon { font-size: 22px; }
 .challenge-type-name {
   font-family: var(--font-display);
