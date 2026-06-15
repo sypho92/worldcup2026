@@ -159,7 +159,7 @@ export default function ScoreboardPage() {
             <p className="sb-info-desc">Tournoi entre amis / famille — pronostic simple.</p>
             <ul className="sb-info-list">
               <li>1 point par bon pronostic</li>
-              <li>Quitte ou double : +2 pts pour le gagnant, 0 pour le perdant</li>
+              <li>Quitte ou double : +1 pt pour le gagnant, -1 pt pour le perdant</li>
               <li>Possibilité de lancer des défis entre joueurs</li>
               <li>Ordre : plus de points = mieux classé — à égalité, le plus de matchs joués l'emporte</li>
             </ul>

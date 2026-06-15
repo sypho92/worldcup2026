@@ -35,16 +35,18 @@ app.post('/api/auth/admin', (req, res) => {
 const PHASE_PTS = { group: 1, demo: 1, liga: 1, pl: 1, test: 1, cl_final: 1, r32: 1, r16: 1, qf: 1, sf: 1, third: 1, final: 1 }
 
 async function snapshotRanks() {
-  const [playersSnap, betsSnap, matchesSnap] = await Promise.all([
+  const [playersSnap, betsSnap, matchesSnap, challengesSnap] = await Promise.all([
     db.ref('players').get(),
     db.ref('bets').get(),
     db.ref('matches').get(),
+    db.ref('challenges').get(),
   ])
   if (!playersSnap.exists()) return
 
   const players = playersSnap.val()
   const allBets = betsSnap.exists() ? betsSnap.val() : {}
   const matches = matchesSnap.exists() ? Object.entries(matchesSnap.val()) : []
+  const challenges = challengesSnap.exists() ? Object.values(challengesSnap.val()) : []
 
   const scores = Object.keys(players).map((pseudoId) => {
     const playerBets = allBets[pseudoId] || {}
@@ -55,6 +57,19 @@ async function snapshotRanks() {
       if (!result || !bet) return
       if (bet === result.winner) { total += PHASE_PTS[m.phase] ?? 1; correct++ }
       else wrong++
+    })
+    challenges.forEach((c) => {
+      if (c.status !== 'accepted') return
+      if (c.type !== 'double' && c.type !== 'both') return
+      if (c.challengerId !== pseudoId && c.challengedId !== pseudoId) return
+      const matchEntry = matches.find(([id]) => id === c.matchId)
+      if (!matchEntry) return
+      const result = matchEntry[1].result
+      if (!result) return
+      const bet = playerBets[c.matchId]
+      if (!bet) return
+      if (bet === result.winner) total += 1
+      else total -= 1
     })
     return { pseudoId, total, correct, wrong }
   }).sort((a, b) => b.total - a.total || b.correct - a.correct || (b.correct + b.wrong) - (a.correct + a.wrong))

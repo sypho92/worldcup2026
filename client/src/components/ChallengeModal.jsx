@@ -145,7 +145,7 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
               >
                 <span className="challenge-type-icon">🎯</span>
                 <span className="challenge-type-name">Quitte ou double</span>
-                <span className="challenge-type-desc">{alreadyHasDouble ? '⚠ Déjà actif' : '+2 pts pour le gagnant'}</span>
+                <span className="challenge-type-desc">{alreadyHasDouble ? '⚠ Déjà actif' : '+1 pt / -1 pt'}</span>
               </button>
               <button
                 className={`challenge-type-btn${type === 'gage' ? ' active' : ''}`}

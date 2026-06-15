@@ -46,7 +46,9 @@ async function refreshMatchState() {
 
       // Match pas encore terminé
       if (!m.result && m.status !== 'FINISHED') {
-        if (kickoff <= now && now - kickoff <= 3.5 * 60 * 60 * 1000 && !overrides[matchId]) {
+        const isStuckLive = m.status === 'IN_PLAY' || m.status === 'PAUSED'
+        const maxWindow = isStuckLive ? 5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000
+        if (kickoff <= now && now - kickoff <= maxWindow && !overrides[matchId]) {
           hasCandidatesForPoll = true
         }
         if (kickoff > now && kickoff < nearestKickoffMs) {
@@ -120,9 +122,12 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
     if (!m.utcDate) return
     const kickoff = new Date(m.utcDate).getTime()
     if (kickoff > now) return
-    if (now - kickoff > 3.5 * 60 * 60 * 1000) return
     if (m.status === 'FINISHED' || m.result) return
     if (overrides[matchId]) return
+    // Matchs bloqués en live : cap 5h. Matchs non démarrés : cap 3.5h
+    const isStuckLive = m.status === 'IN_PLAY' || m.status === 'PAUSED'
+    const maxWindow = isStuckLive ? 5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000
+    if (now - kickoff > maxWindow) return
     candidates.push({ matchId, m })
   })
 

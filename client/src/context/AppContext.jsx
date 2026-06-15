@@ -300,7 +300,9 @@ export function AppProvider({ children }) {
         const result = results[challenge.matchId]
         if (!result) return
         const bet = playerBets[challenge.matchId]
-        if (bet && bet === result.winner) total += 1
+        if (!bet) return
+        if (bet === result.winner) total += 1
+        else total -= 1
       })
 
       return { total, correct, wrong }
