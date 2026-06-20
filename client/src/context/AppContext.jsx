@@ -209,6 +209,10 @@ export function AppProvider({ children }) {
     async ({ matchId, challengedId, type, gage }) => {
       if (!player) return
       if (type === 'double') {
+        const myBet = (allBets[player.pseudoId] || {})[matchId]
+        const theirBet = (allBets[challengedId] || {})[matchId]
+        if (myBet && theirBet && myBet === theirBet) throw new Error('Même pari — défi impossible')
+
         const ACTIVE = ['pending', 'accepted', 'cancel_requested']
         const hasDouble = Object.values(challenges).some(
           (c) =>

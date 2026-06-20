@@ -23,6 +23,9 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
   const existingId2 = `${matchId}_${challengedId}_vs_${player?.pseudoId}`
   const existing = challenges[existingId1] || challenges[existingId2]
 
+  // Check si les deux misent la même chose (dont Nul vs Nul) — quitte ou double impossible
+  const sameBet = myBet && theirBet && myBet === theirBet
+
   // Check if current player OR challenged player already has an active "quitte ou double" on this match
   const ACTIVE = ['pending', 'accepted', 'cancel_requested']
   const alreadyHasDouble = !existing && Object.values(challenges).some(
@@ -139,13 +142,13 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
             {/* Type selector */}
             <div className="challenge-type-row">
               <button
-                className={`challenge-type-btn${type === 'double' ? ' active' : ''}${alreadyHasDouble ? ' disabled' : ''}`}
-                onClick={() => !alreadyHasDouble && setType('double')}
-                title={alreadyHasDouble ? 'Tu as déjà un quitte ou double actif sur ce match' : ''}
+                className={`challenge-type-btn${type === 'double' ? ' active' : ''}${(alreadyHasDouble || sameBet) ? ' disabled' : ''}`}
+                onClick={() => !(alreadyHasDouble || sameBet) && setType('double')}
+                title={sameBet ? 'Même pari — quitte ou double impossible' : alreadyHasDouble ? 'Tu as déjà un quitte ou double actif sur ce match' : ''}
               >
                 <span className="challenge-type-icon">🎯</span>
                 <span className="challenge-type-name">Quitte ou double</span>
-                <span className="challenge-type-desc">{alreadyHasDouble ? '⚠ Déjà actif' : '+1 pt / -1 pt'}</span>
+                <span className="challenge-type-desc">{sameBet ? '⚠ Même pari' : alreadyHasDouble ? '⚠ Déjà actif' : '+1 pt / -1 pt'}</span>
               </button>
               <button
                 className={`challenge-type-btn${type === 'gage' ? ' active' : ''}`}
@@ -177,7 +180,7 @@ export default function ChallengeModal({ matchId, challengedId, onClose }) {
               <button
                 className="btn-primary"
                 onClick={handleSend}
-                disabled={sending || (type === 'gage' && !gage.trim())}
+                disabled={sending || (type === 'gage' && !gage.trim()) || (type === 'double' && (alreadyHasDouble || sameBet))}
               >
                 {sending ? 'Envoi…' : '⚔ Envoyer'}
               </button>
