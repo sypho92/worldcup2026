@@ -12,8 +12,8 @@ const AVATARS = ['⚽', '🏆', '🦁', '🦅', '🐺', '🦊', '🐯', '🦋', 
 // ─── Étapes de la compétition ─────────────────────────────────────────────────
 const COMP_STAGES = [
   { key: 'group', short: 'Groupes' },
-  { key: 'r32',   short: '32e' },
-  { key: 'r16',   short: '16e' },
+  { key: 'r32',   short: '16e' },
+  { key: 'r16',   short: '8e' },
   { key: 'qf',    short: 'Quarts' },
   { key: 'sf',    short: 'Demies' },
   { key: 'third', short: '3e pl.' },

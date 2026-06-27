@@ -12,8 +12,8 @@ const formatPlayerName = (name) => {
 
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
-  { key: 'r32', label: '32e de finale' },
-  { key: 'r16', label: '16e de finale' },
+  { key: 'r32', label: 'Seizième de finale' },
+  { key: 'r16', label: 'Huitième de finale' },
   { key: 'qf', label: 'Quarts de finale' },
   { key: 'sf', label: 'Demi-finales' },
   { key: 'third', label: '3e place' },

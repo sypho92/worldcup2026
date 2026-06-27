@@ -23,8 +23,8 @@ function deriveGroupsData(matches) {
 }
 
 function normalizeMatch(m) {
-  const homeTeam = { ...m.homeTeam, flag: m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' }
-  const awayTeam = { ...m.awayTeam, flag: m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' }
+  const homeTeam = { ...m.homeTeam, flag: m.homeTeam?.flag || m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' }
+  const awayTeam = { ...m.awayTeam, flag: m.awayTeam?.flag || m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' }
 
   if (!m.utcDate) {
     // Pas de date API : on conserve date/time existants si présents, sinon placeholder

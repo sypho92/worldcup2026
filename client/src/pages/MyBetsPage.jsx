@@ -5,7 +5,7 @@ import ScheduleRow from '../components/ScheduleRow'
 
 const PHASES = [
   { key: 'group', label: 'Phase de groupes' },
-  { key: 'r32', label: 'Huitièmes de finale (32e)' },
+  { key: 'r32', label: 'Seizièmes de finale' },
   { key: 'r16', label: 'Huitièmes de finale' },
   { key: 'qf', label: 'Quarts de finale' },
   { key: 'sf', label: 'Demi-finales' },

@@ -1,5 +1,7 @@
 const { db } = require('./firebase')
 const { fetchFixturesByDate, fetchFixtureLive, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
+const { fetchMatches } = require('./footballData')
+const { propagateBracket, resolveGroupSlots, backfillBracket } = require('./bracket')
 
 const DEV_MOCK = process.env.DEV_MOCK === 'true'
 
@@ -13,11 +15,74 @@ const PREMATCH_LEAD    = 60 * 1000       // réveil 1 min avant le coup d'envoi
 // ─── Cache AFL du jour (1 appel /jour) ──────────────────────────────────────
 let _aflCache = { date: null, fixtures: [] }
 let timer = null
+let _lastTeamSync = 0
+const TEAM_SYNC_INTERVAL = 2 * 60 * 60 * 1000 // 2h — 1 requête football-data / appel
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 // File d'attente des buts à récupérer
 const _goalsQueue = new Map()
+
+// ─── Sync équipes depuis football-data.org (1 req = 104 matchs) ─────────────
+async function syncTeamUpdates() {
+  if (!process.env.FOOTBALL_DATA_API_KEY) return
+  try {
+    const apiMatches = await fetchMatches(2000, { season: '2026' })
+    const snap = await db.ref('matches').get()
+    if (!snap.exists()) return
+
+    const matches = snap.val()
+    const fdIdToMatchId = {}
+    const utcDateToMatchId = {}
+    const flagByName = {}
+    Object.entries(matches).forEach(([id, m]) => {
+      if (m.fdId) fdIdToMatchId[m.fdId] = id
+      if (m.utcDate) utcDateToMatchId[m.utcDate] = id
+      // Index drapeaux depuis tous les matchs (flag emoji ou crest URL)
+      const hFlag = m.homeTeam?.flag || m.homeTeam?.crest
+      const aFlag = m.awayTeam?.flag || m.awayTeam?.crest
+      if (m.homeTeam?.name && hFlag) flagByName[m.homeTeam.name] = hFlag
+      if (m.awayTeam?.name && aFlag) flagByName[m.awayTeam.name] = aFlag
+    })
+
+    let updated = 0
+    for (const apiMatch of apiMatches) {
+      // Matching : fdId en priorité, puis utcDate
+      let matchId = fdIdToMatchId[apiMatch.id] || utcDateToMatchId[apiMatch.utcDate]
+      if (!matchId) continue
+      const match = matches[matchId]
+      if (!match || match.phase === 'group' || match.manualOverride) continue
+
+      // Stocke fdId si manquant pour les prochains appels
+      if (!match.fdId) {
+        await db.ref(`matches/${matchId}/fdId`).set(apiMatch.id)
+        fdIdToMatchId[apiMatch.id] = matchId
+      }
+
+      const homeName = apiMatch.homeTeam?.name
+      const awayName = apiMatch.awayTeam?.name
+      if (!homeName || homeName === 'TBD') continue
+      if (!awayName || awayName === 'TBD') continue
+
+      const resolvedHomeFlag = match.homeTeam?.flag || match.homeTeam?.crest || flagByName[homeName] || apiMatch.homeTeam.crest || null
+      const resolvedAwayFlag = match.awayTeam?.flag || match.awayTeam?.crest || flagByName[awayName] || apiMatch.awayTeam.crest || null
+
+      const homeChanged = homeName !== match.homeTeam?.name || resolvedHomeFlag !== (match.homeTeam?.flag || match.homeTeam?.crest || null)
+      const awayChanged = awayName !== match.awayTeam?.name || resolvedAwayFlag !== (match.awayTeam?.flag || match.awayTeam?.crest || null)
+      if (!homeChanged && !awayChanged) continue
+
+      const updates = {}
+      if (homeChanged) updates.homeTeam = { name: homeName, tla: apiMatch.homeTeam.tla || null, flag: resolvedHomeFlag }
+      if (awayChanged) updates.awayTeam = { name: awayName, tla: apiMatch.awayTeam.tla || null, flag: resolvedAwayFlag }
+      await db.ref(`matches/${matchId}`).update(updates)
+      console.log(`[teams] ${matchId}: ${homeValid ? homeName : match.homeTeam?.name} vs ${awayValid ? awayName : match.awayTeam?.name}`)
+      updated++
+    }
+    if (updated > 0) console.log(`[teams] ${updated} équipe(s) mise(s) à jour depuis l'API`)
+  } catch (err) {
+    console.error('[teams] sync error:', err.message)
+  }
+}
 
 // ─── Lecture de l'état Firebase ─────────────────────────────────────────────
 async function refreshMatchState() {
@@ -221,6 +286,10 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
         if (live.winner) {
           updates['score/winner'] = live.winner
           updates.result = { homeScore: live.homeScore, awayScore: live.awayScore, winner: live.winner }
+          propagateBracket(matchId, m, live.winner).catch(err => console.error(`[bracket] ${matchId}:`, err.message))
+          if (m.phase === 'group') {
+            resolveGroupSlots().catch(err => console.error('[bracket] resolve groups:', err.message))
+          }
         }
         _goalsQueue.set(matchId, { homeTeam: m.homeTeam, awayTeam: m.awayTeam })
         console.log(`[afl] ${matchId}: TERMINÉ ${live.homeScore}-${live.awayScore}`)
@@ -308,6 +377,12 @@ async function loop() {
       console.log(`[sync] 💤 IDLE [${ts}] — ${info}, réveil dans ${delayMin}min`)
     }
 
+    // Sync équipes toutes les 2h (1 requête football-data)
+    if (Date.now() - _lastTeamSync > TEAM_SYNC_INTERVAL) {
+      _lastTeamSync = Date.now()
+      syncTeamUpdates().catch(err => console.error('[teams]', err.message))
+    }
+
     timer = setTimeout(loop, delay)
   } catch (err) {
     console.error('[sync] loop error:', err.message)
@@ -323,6 +398,11 @@ async function startSync() {
   }
   console.log('[sync] démarrage — mode AFL-only')
   console.log('[sync] polling: 5min live | 15min mi-temps | 5min pré-match | idle jusqu\'au KO')
+  // Backfill au démarrage : corrige les équipes manquantes dans le bracket
+  backfillBracket().catch(err => console.error('[bracket] backfill:', err.message))
+  resolveGroupSlots().catch(err => console.error('[bracket] resolve groups (startup):', err.message))
+  syncTeamUpdates().catch(err => console.error('[teams] startup:', err.message))
+  _lastTeamSync = Date.now()
   loop()
 }
 

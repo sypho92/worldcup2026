@@ -5,6 +5,7 @@ const path = require('path')
 const { db } = require('./firebase')
 const { startSync, syncNow } = require('./sync')
 const { fetchMatches, mapMatch, STAGE_TO_PHASE } = require('./footballData')
+const { propagateBracket, resolveGroupSlots } = require('./bracket')
 const discord = require('./discord')
 discord.connect()
 
@@ -116,6 +117,16 @@ app.post('/api/results/:matchId', async (req, res) => {
     // Also update team names if provided (for knockout matches)
     if (homeTeam) await db.ref(`matches/${matchId}/homeTeam`).set(homeTeam)
     if (awayTeam) await db.ref(`matches/${matchId}/awayTeam`).set(awayTeam)
+
+    // Propagation automatique du bracket
+    const matchSnap = await db.ref(`matches/${matchId}`).get()
+    if (matchSnap.exists()) {
+      const matchData = matchSnap.val()
+      propagateBracket(matchId, matchData, winner).catch(err => console.error('[bracket]', err.message))
+      if (matchData.phase === 'group') {
+        resolveGroupSlots().catch(err => console.error('[bracket] resolve groups:', err.message))
+      }
+    }
 
     res.json({ success: true, matchId, homeScore: hs, awayScore: as, winner })
   } catch (err) {

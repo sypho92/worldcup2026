@@ -247,11 +247,11 @@ function BracketView() {
         {/* ── DEMI-GAUCHE : R32 → R16 → QF → SF1 ── */}
         <div className="b-half">
           <div className="b-col-wrap">
-            <div className="b-col-label">32e de finale</div>
+            <div className="b-col-label">Seizième de finale</div>
             <ColR32 pairs={LEFT.r32} />
           </div>
           <div className="b-col-wrap">
-            <div className="b-col-label">16e de finale</div>
+            <div className="b-col-label">Huitième de finale</div>
             <ColSingle ids={LEFT.r16} nSlots={8} />
           </div>
           <div className="b-col-wrap">
@@ -285,11 +285,11 @@ function BracketView() {
             <ColSingle ids={RIGHT.qf} nSlots={4} />
           </div>
           <div className="b-col-wrap">
-            <div className="b-col-label">16e de finale</div>
+            <div className="b-col-label">Huitième de finale</div>
             <ColSingle ids={RIGHT.r16} nSlots={8} />
           </div>
           <div className="b-col-wrap">
-            <div className="b-col-label">32e de finale</div>
+            <div className="b-col-label">Seizième de finale</div>
             <ColR32 pairs={RIGHT.r32} />
           </div>
         </div>
@@ -304,8 +304,8 @@ function BracketView() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const KNOCKOUT_ROUNDS = [
-  { key: 'r32', label: '32e', pts: 1 },
-  { key: 'r16', label: '16e', pts: 1 },
+  { key: 'r32', label: 'Seizième', pts: 1 },
+  { key: 'r16', label: 'Huitième', pts: 1 },
   { key: 'qf', label: 'Quarts', pts: 1 },
   { key: 'sf', label: 'Demies', pts: 1 },
   { key: 'third', label: '3e place', pts: 1 },
