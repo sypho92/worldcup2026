@@ -133,13 +133,43 @@ function RankArrow({ delta }) {
   return <span style={{ color: 'var(--text-secondary)', fontSize: 12, marginLeft: 3 }}>–</span>
 }
 
+const KNOCKOUT_PHASES = new Set(['r32', 'r16', 'qf', 'sf', 'third', 'final'])
+
 export default function ScoreboardPage() {
-  const { player, scoreboard, results, matches, groupsData, scoreboardSnapshot } = useApp()
+  const { player, scoreboard, results, matches, groupsData, scoreboardSnapshot, allBets, players, challenges } = useApp()
   const [showGroups, setShowGroups] = useState(false)
   const [viewedPlayerId, setViewedPlayerId] = useState(null)
   const [showInfo, setShowInfo] = useState(false)
+  const [activeTab, setActiveTab] = useState('all')
 
   const board = useMemo(() => scoreboard(), [scoreboard])
+
+  const knockoutBoard = useMemo(() => {
+    const knockoutMatches = matches.filter((m) => KNOCKOUT_PHASES.has(m.phase))
+    return Object.entries(players).map(([pseudoId, p]) => {
+      const playerBets = allBets[pseudoId] || {}
+      let total = 0, correct = 0, wrong = 0
+      knockoutMatches.forEach((m) => {
+        const result = results[m.id]
+        const bet = playerBets[m.id]
+        if (!result || !bet) return
+        if (bet === result.winner) { total++; correct++ } else { wrong++ }
+      })
+      Object.values(challenges).forEach((c) => {
+        if (c.status !== 'accepted') return
+        if (c.type !== 'double' && c.type !== 'both') return
+        if (c.challengerId !== pseudoId && c.challengedId !== pseudoId) return
+        const m = knockoutMatches.find((m) => m.id === c.matchId)
+        if (!m) return
+        const result = results[c.matchId]
+        if (!result) return
+        const bet = playerBets[c.matchId]
+        if (!bet) return
+        if (bet === result.winner) total += 1; else total -= 1
+      })
+      return { pseudoId, name: p.name, avatar: p.avatar, points: total, correctBets: correct, wrongBets: wrong }
+    }).sort((a, b) => b.points - a.points || b.correctBets - a.correctBets || (b.correctBets + b.wrongBets) - (a.correctBets + a.wrongBets))
+  }, [players, allBets, results, matches, challenges])
 
   return (
     <div className="page">
@@ -176,6 +206,22 @@ export default function ScoreboardPage() {
         />
       )}
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button
+          className={`filter-tab${activeTab === 'all' ? ' active' : ''}`}
+          onClick={() => setActiveTab('all')}
+        >
+          Classement général
+        </button>
+        <button
+          className={`filter-tab${activeTab === 'knockout' ? ' active' : ''}`}
+          onClick={() => setActiveTab('knockout')}
+        >
+          ⚡ Phase éliminatoire
+        </button>
+      </div>
+
       {/* League table */}
       <div className="lt-wrap mb-24">
         {board.length === 0 ? (
@@ -197,7 +243,7 @@ export default function ScoreboardPage() {
               </tr>
             </thead>
             <tbody>
-              {board.map((p, i) => {
+              {(activeTab === 'all' ? board : knockoutBoard).map((p, i) => {
                 const played = p.correctBets + p.wrongBets
                 const pct = played > 0 ? Math.round((p.correctBets / played) * 100) : 0
                 const isMine = p.pseudoId === player?.pseudoId
