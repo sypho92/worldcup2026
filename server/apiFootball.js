@@ -28,21 +28,14 @@ async function fetchFixturesByDate(date) {
 }
 
 /**
- * Récupère le statut live d'un fixture AFL (score, minute, statut).
- * Coûte 1 requête.
+ * Parse un objet fixture brut de l'API en format interne normalisé.
  */
-async function fetchFixtureLive(fixtureId) {
-  const res = await fetch(`${API_BASE}/fixtures?id=${fixtureId}`, { headers: getHeaders() })
-  if (!res.ok) throw new Error(`afl fixture live ${res.status}`)
-  const data = await res.json()
-  const f = (data.response || [])[0]
+function parseFixture(f) {
   if (!f) return null
-
-  const statusShort = f.fixture?.status?.short  // NS, 1H, HT, 2H, FT, etc.
+  const statusShort = f.fixture?.status?.short
   const elapsed     = f.fixture?.status?.elapsed ?? null
   const extra       = f.fixture?.status?.extra   ?? null
 
-  // Map AFL status → football-data status
   let status = 'TIMED'
   if (statusShort === '1H' || statusShort === '2H' || statusShort === 'ET' || statusShort === 'P')
     status = 'IN_PLAY'
@@ -59,6 +52,31 @@ async function fetchFixtureLive(fixtureId) {
       : null
 
   return { status, statusShort, elapsed, extra, homeScore, awayScore, winner }
+}
+
+/**
+ * Récupère TOUS les fixtures live en un seul appel — remplace les appels par-match.
+ * Coûte 1 requête quelle que soit le nombre de matchs en cours.
+ */
+async function fetchAllLiveFixtures() {
+  const res = await fetch(`${API_BASE}/fixtures?live=all`, { headers: getHeaders() })
+  if (!res.ok) throw new Error(`afl live all ${res.status}`)
+  const data = await res.json()
+  if (data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`afl error: ${JSON.stringify(data.errors)}`)
+  }
+  return data.response || []
+}
+
+/**
+ * Récupère le statut d'un fixture spécifique (1 requête).
+ * Uniquement utilisé quand un match vient de terminer (disparu du feed live).
+ */
+async function fetchFixtureLive(fixtureId) {
+  const res = await fetch(`${API_BASE}/fixtures?id=${fixtureId}`, { headers: getHeaders() })
+  if (!res.ok) throw new Error(`afl fixture live ${res.status}`)
+  const data = await res.json()
+  return parseFixture((data.response || [])[0])
 }
 
 /**
@@ -128,4 +146,4 @@ function mapAflGoals(events, aflHomeTeamId, aflAwayTeamId) {
     }))
 }
 
-module.exports = { fetchFixturesByDate, fetchFixtureLive, fetchFixtureEvents, findAflFixture, mapAflGoals }
+module.exports = { fetchFixturesByDate, fetchFixtureLive, fetchAllLiveFixtures, parseFixture, fetchFixtureEvents, findAflFixture, mapAflGoals }

@@ -1,5 +1,5 @@
 const { db } = require('./firebase')
-const { fetchFixturesByDate, fetchFixtureLive, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
+const { fetchFixturesByDate, fetchFixtureLive, fetchAllLiveFixtures, parseFixture, fetchFixtureEvents, findAflFixture, mapAflGoals } = require('./apiFootball')
 const { fetchMatches } = require('./footballData')
 const { propagateBracket, resolveGroupSlots, backfillBracket } = require('./bracket')
 
@@ -75,7 +75,7 @@ async function syncTeamUpdates() {
       if (homeChanged) updates.homeTeam = { name: homeName, tla: apiMatch.homeTeam.tla || null, flag: resolvedHomeFlag }
       if (awayChanged) updates.awayTeam = { name: awayName, tla: apiMatch.awayTeam.tla || null, flag: resolvedAwayFlag }
       await db.ref(`matches/${matchId}`).update(updates)
-      console.log(`[teams] ${matchId}: ${homeValid ? homeName : match.homeTeam?.name} vs ${awayValid ? awayName : match.awayTeam?.name}`)
+      console.log(`[teams] ${matchId}: ${homeName} vs ${awayName}`)
       updated++
     }
     if (updated > 0) console.log(`[teams] ${updated} équipe(s) mise(s) à jour depuis l'API`)
@@ -136,12 +136,12 @@ async function drainGoalsQueue(aflIds) {
     try {
       _aflCache.fixtures = await fetchFixturesByDate(today)
       _aflCache.date = today
+      await sleep(1000)
     } catch (err) {
       console.error('[goals] cache AFL erreur:', err.message)
       _goalsQueue.clear()
       return
     }
-    await sleep(1000)
   }
 
   const queue = [..._goalsQueue.entries()]
@@ -198,17 +198,26 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
 
   if (candidates.length === 0) return { hasLive: false, hasPaused: false }
 
-  // Cache AFL du jour
+  // === 1 SEUL appel AFL pour tous les matchs live ===
+  let liveByAflId = {}
+  try {
+    const allLive = await fetchAllLiveFixtures()
+    allLive.forEach(f => { if (f.fixture?.id) liveByAflId[f.fixture.id] = f })
+    console.log(`[afl] bulk live: ${allLive.length} match(s) en cours`)
+  } catch (err) {
+    console.error('[afl] bulk live erreur:', err.message)
+    return { hasLive: false, hasPaused: false }
+  }
+
+  // Cache du jour — lazy, seulement si un aflId est manquant
   const today = new Date().toISOString().slice(0, 10)
-  if (_aflCache.date !== today) {
-    try {
-      _aflCache.fixtures = await fetchFixturesByDate(today)
-      _aflCache.date = today
-      console.log(`[afl] cache : ${_aflCache.fixtures.length} fixtures pour ${today}`)
-    } catch (err) {
-      console.error('[afl] cache erreur:', err.message)
-      return { hasLive: false, hasPaused: false }
-    }
+  let dayCacheLoaded = _aflCache.date === today
+  async function ensureDayCache() {
+    if (dayCacheLoaded) return
+    _aflCache.fixtures = await fetchFixturesByDate(today)
+    _aflCache.date = today
+    dayCacheLoaded = true
+    console.log(`[afl] cache jour: ${_aflCache.fixtures.length} fixtures`)
     await sleep(1000)
   }
 
@@ -217,9 +226,10 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
 
   for (const { matchId, m } of candidates) {
     try {
-      // Résolution AFL ID
+      // Résolution AFL ID (lazy: fetch cache jour seulement si nécessaire)
       let ids = aflIds[matchId]
       if (!ids?.aflId) {
+        await ensureDayCache()
         const fixture = findAflFixture(_aflCache.fixtures, { homeTeam: m.homeTeam, awayTeam: m.awayTeam })
         if (!fixture) {
           console.warn(`[afl] ${matchId}: fixture introuvable (${m.homeTeam?.name} vs ${m.awayTeam?.name})`)
@@ -231,8 +241,21 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
         console.log(`[afl] ${matchId}: aflId=${ids.aflId} résolu`)
       }
 
-      const live = await fetchFixtureLive(ids.aflId)
-      if (!live) continue
+      // Chercher dans le bulk live (0 requête supplémentaire)
+      const rawFixture = liveByAflId[ids.aflId]
+      let live = rawFixture ? parseFixture(rawFixture) : null
+
+      // Pas dans le feed live MAIS était IN_PLAY/PAUSED → vient de terminer
+      // → 1 appel individuel (rare : max 1 fois par match sur toute la journée)
+      if (!live && (prevStatuses[matchId] === 'IN_PLAY' || prevStatuses[matchId] === 'PAUSED')) {
+        live = await fetchFixtureLive(ids.aflId)
+        await sleep(600)
+      }
+
+      if (!live) {
+        console.log(`[afl] ${matchId}: statut=TIMED — KO passé, on attend...`)
+        continue
+      }
 
       const updates = {}
 
