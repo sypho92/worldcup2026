@@ -443,7 +443,12 @@ export default function ScheduleRow({ match, entryDelay = 0, isNextMatch = false
           <Flag flag={match.homeTeam.flag} size={40} />
 
           {finished ? (
-            <span className="sched-score">{result.homeScore} – {result.awayScore}</span>
+            <span className="sched-score">
+              {result.homeScore} – {result.awayScore}
+              {result.penHome != null && result.penAway != null && (
+                <small className="sched-score-pens"> ({result.penHome}–{result.penAway} t.a.b.)</small>
+              )}
+            </span>
           ) : hasLiveScore ? (
             <span className="sched-score sched-score--live">{liveHome} – {liveAway}</span>
           ) : (

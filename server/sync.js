@@ -306,9 +306,17 @@ async function syncAflLive(overrides, prevStatuses, prevScores, firstHalfKickoff
         updates.status = 'FINISHED'
         updates['score/fullTime/home'] = live.homeScore
         updates['score/fullTime/away'] = live.awayScore
+        const hasPens = live.penHome !== null && live.penAway !== null
+        if (hasPens) {
+          updates['score/penalties/home'] = live.penHome
+          updates['score/penalties/away'] = live.penAway
+        }
         if (live.winner) {
           updates['score/winner'] = live.winner
-          updates.result = { homeScore: live.homeScore, awayScore: live.awayScore, winner: live.winner }
+          updates.result = {
+            homeScore: live.homeScore, awayScore: live.awayScore, winner: live.winner,
+            ...(hasPens ? { penHome: live.penHome, penAway: live.penAway } : {}),
+          }
           propagateBracket(matchId, m, live.winner).catch(err => console.error(`[bracket] ${matchId}:`, err.message))
           if (m.phase === 'group') {
             resolveGroupSlots().catch(err => console.error('[bracket] resolve groups:', err.message))

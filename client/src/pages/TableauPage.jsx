@@ -158,16 +158,17 @@ function GroupsTab() {
 // ONGLET ÉLIMINATOIRES — BRACKET
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Structure officielle FIFA 2026 — voir BRACKET dans server/bracket.js
 const LEFT = {
-  r32: [['m073', 'm074'], ['m075', 'm076'], ['m077', 'm078'], ['m079', 'm080']],
-  r16: ['m089', 'm090', 'm091', 'm092'],
-  qf: ['m097', 'm098'],
+  r32: [['m075', 'm078'], ['m073', 'm076'], ['m084', 'm083'], ['m082', 'm081']],
+  r16: ['m090', 'm089', 'm093', 'm094'],
+  qf: ['m097', 'm099'],
   sf: 'm101',
 }
 const RIGHT = {
-  qf: ['m099', 'm100'],
-  r16: ['m093', 'm094', 'm095', 'm096'],
-  r32: [['m081', 'm082'], ['m083', 'm084'], ['m085', 'm086'], ['m087', 'm088']],
+  qf: ['m098', 'm100'],
+  r16: ['m091', 'm092', 'm095', 'm096'],
+  r32: [['m074', 'm077'], ['m079', 'm080'], ['m087', 'm086'], ['m085', 'm088']],
   sf: 'm102',
 }
 const FINAL_ID = 'm104'
@@ -303,65 +304,13 @@ function BracketView() {
 // ONGLET ÉLIMINATOIRES — VUE LISTE
 // ─────────────────────────────────────────────────────────────────────────────
 
-const KNOCKOUT_ROUNDS = [
-  { key: 'r32', label: 'Seizième', pts: 1 },
-  { key: 'r16', label: 'Huitième', pts: 1 },
-  { key: 'qf', label: 'Quarts', pts: 1 },
-  { key: 'sf', label: 'Demies', pts: 1 },
-  { key: 'third', label: '3e place', pts: 1 },
-  { key: 'final', label: 'Finale', pts: 1 },
-]
-
 function KnockoutTab() {
-  const [view, setView] = useState('bracket')
-  const [listRound, setListRound] = useState('r32')
-
-  const { matches } = useApp()
-  const listMatches = useMemo(
-    () => matches.filter((m) => m.phase === listRound),
-    [listRound, matches]
-  )
-
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button className={`filter-tab ${view === 'bracket' ? 'active' : ''}`} onClick={() => setView('bracket')}>
-          🏆 Bracket
-        </button>
-        <button className={`filter-tab ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>
-          📋 Liste
-        </button>
-      </div>
-
-      {view === 'bracket' ? (
-        <div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-            Faites défiler horizontalement pour voir l'arbre complet
-          </p>
-          <BracketView />
-        </div>
-      ) : (
-        <div>
-          <div className="filter-tabs">
-            {KNOCKOUT_ROUNDS.map((r) => (
-              <button
-                key={r.key}
-                className={`filter-tab ${listRound === r.key ? 'active' : ''}`}
-                onClick={() => setListRound(r.key)}
-              >
-                {r.label}
-                <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.7 }}>+{r.pts}pts</span>
-              </button>
-            ))}
-          </div>
-          <div className="knockout-grid" style={{ marginTop: 16 }}>
-            {listMatches.length === 0
-              ? <div className="empty-state"><p>Aucun match.</p></div>
-              : listMatches.map((m) => <MatchCard key={m.id} match={m} showBets showVenue />)
-            }
-          </div>
-        </div>
-      )}
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+        Faites défiler horizontalement pour voir l'arbre complet
+      </p>
+      <BracketView />
     </div>
   )
 }
@@ -371,7 +320,7 @@ function KnockoutTab() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function TableauPage() {
-  const [tab, setTab] = useState('groups')
+  const [tab, setTab] = useState('knockout')
 
   return (
     <div className="page" style={{ maxWidth: '100%' }}>

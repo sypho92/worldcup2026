@@ -4,41 +4,50 @@ const { db } = require('./firebase')
 // ─── Propagation du bracket éliminatoires ────────────────────────────────────
 // Vainqueur de chaque match → prochain match (side home|away)
 // SF : le perdant va en match pour la 3e place
+// Structure officielle FIFA 2026 (bracket symétrique gauche/droite).
+// Les m-id sont assignés par DATE, pas par numéro de match officiel : on
+// route donc explicitement chaque match vers son suivant pour reproduire
+// l'arbre officiel (cf. image bracket FIFA).
+//
+//   MOITIÉ GAUCHE → demie m101                MOITIÉ DROITE → demie m102
+//   m090 = m075(All/Par)  + m078(Fra/Sue)     m091 = m074(Bré/Jap) + m077(CIv/Nor)
+//   m089 = m073(AfS/Can)  + m076(PB/Mar)      m092 = m079(Mex/Equ) + m080(Ang/Cgo)
+//   m093 = m084(Por/Cro)  + m083(Esp/Aut)     m095 = m087(Arg/CpV) + m086(Aus/Egy)
+//   m094 = m082(USA/Bos)  + m081(Bel/Sén)     m096 = m085(Sui/Alg) + m088(Col/Gha)
 const BRACKET = {
-  // Seizièmes → Huitièmes (côté gauche)
-  m073: { next: 'm089', side: 'home' },
-  m074: { next: 'm089', side: 'away' },
-  m075: { next: 'm090', side: 'home' },
-  m076: { next: 'm090', side: 'away' },
-  m077: { next: 'm091', side: 'home' },
-  m078: { next: 'm091', side: 'away' },
-  m079: { next: 'm092', side: 'home' },
-  m080: { next: 'm092', side: 'away' },
-  // Seizièmes → Huitièmes (côté droit)
-  m081: { next: 'm093', side: 'home' },
-  m082: { next: 'm093', side: 'away' },
-  m083: { next: 'm094', side: 'home' },
-  m084: { next: 'm094', side: 'away' },
-  m085: { next: 'm095', side: 'home' },
-  m086: { next: 'm095', side: 'away' },
-  m087: { next: 'm096', side: 'home' },
-  m088: { next: 'm096', side: 'away' },
-  // Huitièmes → Quarts (côté gauche)
-  m089: { next: 'm097', side: 'home' },
+  // ── Seizièmes → Huitièmes — MOITIÉ GAUCHE ──
+  m075: { next: 'm090', side: 'home' },  // Allemagne/Paraguay
+  m078: { next: 'm090', side: 'away' },  // France/Suède
+  m073: { next: 'm089', side: 'home' },  // Afrique du Sud/Canada
+  m076: { next: 'm089', side: 'away' },  // Pays-Bas/Maroc
+  m084: { next: 'm093', side: 'home' },  // Portugal/Croatie
+  m083: { next: 'm093', side: 'away' },  // Espagne/Autriche
+  m082: { next: 'm094', side: 'home' },  // USA/Bosnie
+  m081: { next: 'm094', side: 'away' },  // Belgique/Sénégal
+  // ── Seizièmes → Huitièmes — MOITIÉ DROITE ──
+  m074: { next: 'm091', side: 'home' },  // Brésil/Japon
+  m077: { next: 'm091', side: 'away' },  // Côte d'Ivoire/Norvège
+  m079: { next: 'm092', side: 'home' },  // Mexique/Équateur
+  m080: { next: 'm092', side: 'away' },  // Angleterre/Congo
+  m087: { next: 'm095', side: 'home' },  // Argentine/Cap-Vert
+  m086: { next: 'm095', side: 'away' },  // Australie/Égypte
+  m085: { next: 'm096', side: 'home' },  // Suisse/Algérie
+  m088: { next: 'm096', side: 'away' },  // Colombie/Ghana
+  // ── Huitièmes → Quarts ──
+  m089: { next: 'm097', side: 'home' },  // GAUCHE haut
   m090: { next: 'm097', side: 'away' },
-  m091: { next: 'm098', side: 'home' },
-  m092: { next: 'm098', side: 'away' },
-  // Huitièmes → Quarts (côté droit)
-  m093: { next: 'm099', side: 'home' },
+  m093: { next: 'm099', side: 'home' },  // GAUCHE bas
   m094: { next: 'm099', side: 'away' },
-  m095: { next: 'm100', side: 'home' },
+  m091: { next: 'm098', side: 'home' },  // DROITE haut
+  m092: { next: 'm098', side: 'away' },
+  m095: { next: 'm100', side: 'home' },  // DROITE bas
   m096: { next: 'm100', side: 'away' },
-  // Quarts → Demies
-  m097: { next: 'm101', side: 'home' },
-  m098: { next: 'm101', side: 'away' },
-  m099: { next: 'm102', side: 'home' },
+  // ── Quarts → Demies ──
+  m097: { next: 'm101', side: 'home' },  // m101 = demie GAUCHE
+  m099: { next: 'm101', side: 'away' },
+  m098: { next: 'm102', side: 'home' },  // m102 = demie DROITE
   m100: { next: 'm102', side: 'away' },
-  // Demies → Finale + 3e place
+  // ── Demies → Finale + 3e place ──
   m101: { next: 'm104', side: 'home', loserNext: 'm103', loserSide: 'home' },
   m102: { next: 'm104', side: 'away', loserNext: 'm103', loserSide: 'away' },
 }

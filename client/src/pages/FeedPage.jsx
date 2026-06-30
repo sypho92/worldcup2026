@@ -46,6 +46,14 @@ export default function FeedPage() {
     return () => unsub()
   }, [])
 
+  // Défile vers le dernier message à chaque nouveau post (instantané au 1er rendu)
+  const firstScroll = useRef(true)
+  useEffect(() => {
+    if (posts.length === 0) return
+    bottomRef.current?.scrollIntoView({ behavior: firstScroll.current ? 'auto' : 'smooth' })
+    firstScroll.current = false
+  }, [posts.length])
+
   useEffect(() => {
     if (!pickerOpen) return
     function handler(e) {

@@ -46,12 +46,22 @@ function parseFixture(f) {
 
   const homeScore = f.score?.fulltime?.home ?? f.goals?.home ?? null
   const awayScore = f.score?.fulltime?.away ?? f.goals?.away ?? null
-  const winner =
-    status === 'FINISHED' && homeScore !== null && awayScore !== null
-      ? homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw'
-      : null
 
-  return { status, statusShort, elapsed, extra, homeScore, awayScore, winner }
+  // Tirs au but (élimination directe) — départage un score réglementaire nul
+  const penHome = f.score?.penalty?.home ?? null
+  const penAway = f.score?.penalty?.away ?? null
+  const hasPenalties = penHome !== null && penAway !== null
+
+  let winner = null
+  if (status === 'FINISHED' && homeScore !== null && awayScore !== null) {
+    if (homeScore > awayScore) winner = 'home'
+    else if (awayScore > homeScore) winner = 'away'
+    // Score nul après prolongation → tirs au but décident le vainqueur
+    else if (hasPenalties) winner = penHome > penAway ? 'home' : 'away'
+    else winner = 'draw'
+  }
+
+  return { status, statusShort, elapsed, extra, homeScore, awayScore, winner, penHome, penAway }
 }
 
 /**
