@@ -240,8 +240,20 @@ export function AppProvider({ children }) {
   )
 
   const respondToChallenge = useCallback(async (challengeId, response) => {
+    const challenge = challenges[challengeId]
+    // Un quitte ou double doit être accepté AVANT le coup d'envoi.
+    // Si le match a démarré (ou est terminé), l'acceptation est invalide → expiré.
+    if (response === 'accepted' && challenge) {
+      const match = matchesById[challenge.matchId]
+      const started = match?.utcDate && Date.now() >= new Date(match.utcDate).getTime()
+      const finished = match && !!results[challenge.matchId]
+      if (started || finished) {
+        await update(ref(db, `challenges/${challengeId}`), { status: 'expired' })
+        throw new Error('Match déjà commencé — le défi a expiré')
+      }
+    }
     await update(ref(db, `challenges/${challengeId}`), { status: response })
-  }, [])
+  }, [challenges, matchesById, results])
 
   const requestCancelChallenge = useCallback(async (challengeId) => {
     if (!player) return

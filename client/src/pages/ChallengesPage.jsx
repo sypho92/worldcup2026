@@ -23,13 +23,17 @@ export default function ChallengesPage() {
         const myBet     = allBets[player.pseudoId]?.[c.matchId]
         const theirBet  = allBets[otherId]?.[c.matchId]
         const finished  = !!result
+        const match     = matchesById[c.matchId]
+        // Match ouvert = non commencé et non terminé (un défi doit être accepté avant le KO)
+        const started   = match?.utcDate && Date.now() >= new Date(match.utcDate).getTime()
+        const matchOpen = !finished && !started
         // Un défi est gagné uniquement si MOI j'ai bon ET l'adversaire a tort.
         // Si aucun n'a le bon résultat (ex: nul alors que chacun a misé sur une équipe)
         // → isNull = true, le gage est annulé, personne ne doit rien.
         const iWon  = finished && !!myBet   && myBet   === result?.winner && theirBet !== result?.winner
         const iLost = finished && !!theirBet && theirBet === result?.winner && myBet   !== result?.winner
         const isNull = finished && !iWon && !iLost
-        return { id, ...c, finished, iWon, iLost, isNull }
+        return { id, ...c, finished, matchOpen, iWon, iLost, isNull }
       })
       .sort((a, b) => b.createdAt - a.createdAt)
   }, [challenges, player, results, allBets, matchesById, players])
@@ -37,7 +41,7 @@ export default function ChallengesPage() {
   if (!player) return null
 
   // Section buckets
-  const toRespond = enriched.filter(c => c.challengedId === player.pseudoId && c.status === 'pending')
+  const toRespond = enriched.filter(c => c.challengedId === player.pseudoId && c.status === 'pending' && c.matchOpen)
   const enCours   = enriched.filter(c => (c.status === 'accepted' || c.status === 'cancel_requested') && !c.finished)
   const aHonorer  = enriched.filter(c => c.status === 'accepted' && c.finished && c.iLost)
   const remportes = enriched.filter(c => c.status === 'accepted' && c.finished && c.iWon)

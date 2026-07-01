@@ -6,9 +6,18 @@ import { abbrev } from '../utils/format'
 import CancelRequestModal from './CancelRequestModal'
 
 export default function ChallengeNotifications() {
-  const { player, players, challenges, respondToChallenge, allBets, matchesById } = useApp()
+  const { player, players, challenges, respondToChallenge, allBets, matchesById, results } = useApp()
   const [dismissed, setDismissed] = useState({})
   const [cancelModalId, setCancelModalId] = useState(null)
+
+  // Un défi n'est acceptable que si le match n'a pas encore commencé
+  const isMatchOpen = (matchId) => {
+    const m = matchesById[matchId]
+    if (!m) return false
+    if (results[matchId]) return false
+    if (m.utcDate && Date.now() >= new Date(m.utcDate).getTime()) return false
+    return true
+  }
 
   // ── Nouveaux défis reçus ──────────────────────────────────────────────────
   const pending = useMemo(() => {
@@ -17,11 +26,12 @@ export default function ChallengeNotifications() {
       .filter(([id, c]) =>
         c.challengedId === player.pseudoId &&
         c.status === 'pending' &&
-        !dismissed[id]
+        !dismissed[id] &&
+        isMatchOpen(c.matchId)   // masque les défis dont le match a commencé
       )
       .map(([id, c]) => ({ id, ...c }))
       .sort((a, b) => b.createdAt - a.createdAt)
-  }, [challenges, player, dismissed])
+  }, [challenges, player, dismissed, matchesById, results])
 
   // ── Demandes d'annulation reçues ──────────────────────────────────────────
   const cancelRequests = useMemo(() => {
