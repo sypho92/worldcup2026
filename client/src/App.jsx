@@ -10,7 +10,6 @@ import TableauPage from './pages/TableauPage'
 import ChallengesPage from './pages/ChallengesPage'
 import FeedPage from './pages/FeedPage'
 import ChallengeNotifications from './components/ChallengeNotifications'
-import FunNotifications from './components/FunNotifications'
 import LiveTicker from './components/LiveTicker'
 
 function RequireAuth({ children }) {
@@ -55,7 +54,6 @@ function AppRoutes() {
         </Routes>
       </main>
       <ChallengeNotifications />
-      <FunNotifications />
       <LiveTicker />
     </div>
   )

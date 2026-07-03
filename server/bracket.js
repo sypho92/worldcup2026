@@ -57,6 +57,14 @@ async function propagateBracket(matchId, matchData, winner) {
   const entry = BRACKET[matchId]
   if (!entry) return
 
+  // Élimination directe : le vainqueur doit être 'home' ou 'away'. Si le résultat
+  // est un nul (tirs au but non résolus par la source), on NE propage PAS — sinon
+  // l'équipe 'away' avancerait à tort. Un vainqueur réel sera propagé plus tard.
+  if (winner !== 'home' && winner !== 'away') {
+    console.warn(`[bracket] ${matchId}: winner='${winner}' non résolu — propagation ignorée`)
+    return
+  }
+
   const winnerTeam = winner === 'home' ? matchData.homeTeam : matchData.awayTeam
   const loserTeam  = winner === 'home' ? matchData.awayTeam : matchData.homeTeam
 
