@@ -52,6 +52,12 @@ async function syncTeamUpdates() {
       if (!matchId) continue
       const match = matches[matchId]
       if (!match || match.phase === 'group' || match.manualOverride) continue
+      // Les tours à élimination directe au-delà des 16es (R16→finale) sont
+      // remplis EXCLUSIVEMENT par la propagation du bracket (server/bracket.js),
+      // qui copie l'objet équipe complet (nom + drapeau cohérents). Laisser aussi
+      // l'API écrire ces slots créait un conflit à deux écritures : le nom venait
+      // de l'API mais le drapeau restait celui du slot → drapeaux inversés.
+      if (['r16', 'qf', 'sf', 'third', 'final'].includes(match.phase)) continue
 
       // Stocke fdId si manquant pour les prochains appels
       if (!match.fdId) {
@@ -64,8 +70,14 @@ async function syncTeamUpdates() {
       if (!homeName || homeName === 'TBD') continue
       if (!awayName || awayName === 'TBD') continue
 
-      const resolvedHomeFlag = match.homeTeam?.flag || match.homeTeam?.crest || flagByName[homeName] || apiMatch.homeTeam.crest || null
-      const resolvedAwayFlag = match.awayTeam?.flag || match.awayTeam?.crest || flagByName[awayName] || apiMatch.awayTeam.crest || null
+      // Le drapeau doit TOUJOURS correspondre au NOM courant. On résout par le nom
+      // (flagByName / crest API) en priorité ; on ne réutilise le drapeau existant
+      // du slot que si le nom est inchangé — sinon un changement de nom garderait
+      // un drapeau périmé (mismatch nom/drapeau).
+      const homeSame = homeName === match.homeTeam?.name
+      const awaySame = awayName === match.awayTeam?.name
+      const resolvedHomeFlag = flagByName[homeName] || apiMatch.homeTeam.crest || (homeSame ? (match.homeTeam?.flag || match.homeTeam?.crest) : null) || null
+      const resolvedAwayFlag = flagByName[awayName] || apiMatch.awayTeam.crest || (awaySame ? (match.awayTeam?.flag || match.awayTeam?.crest) : null) || null
 
       const homeChanged = homeName !== match.homeTeam?.name || resolvedHomeFlag !== (match.homeTeam?.flag || match.homeTeam?.crest || null)
       const awayChanged = awayName !== match.awayTeam?.name || resolvedAwayFlag !== (match.awayTeam?.flag || match.awayTeam?.crest || null)

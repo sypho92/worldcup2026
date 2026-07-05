@@ -22,9 +22,38 @@ function deriveGroupsData(matches) {
   )
 }
 
-function normalizeMatch(m) {
-  const homeTeam = { ...m.homeTeam, flag: m.homeTeam?.flag || m.homeTeam?.crest || null, shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' }
-  const awayTeam = { ...m.awayTeam, flag: m.awayTeam?.flag || m.awayTeam?.crest || null, shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' }
+// Table canonique nom/tla → drapeau, construite depuis la phase de groupes
+// (chaque nation y figure avec son drapeau correct). Source de vérité unique :
+// peu importe ce que le backend écrit dans les slots à élimination directe, le
+// drapeau AFFICHÉ est toujours celui de l'équipe portant ce nom → impossible
+// d'avoir un drapeau inversé.
+function buildFlagRegistry(matchesObj) {
+  const byName = {}
+  const byTla = {}
+  Object.values(matchesObj).forEach((m) => {
+    if (m.phase !== 'group') return
+    ;[m.homeTeam, m.awayTeam].forEach((t) => {
+      const flag = t?.flag || t?.crest
+      if (t?.name && flag && !byName[t.name]) byName[t.name] = flag
+      if (t?.tla && flag && !byTla[t.tla]) byTla[t.tla] = flag
+    })
+  })
+  return { byName, byTla }
+}
+
+// Résout le drapeau d'une équipe par son identité (nom → tla → valeur stockée)
+function resolveFlag(team, registry) {
+  if (!team) return null
+  return (
+    (team.name && registry.byName[team.name]) ||
+    (team.tla && registry.byTla[team.tla]) ||
+    team.flag || team.crest || null
+  )
+}
+
+function normalizeMatch(m, registry = { byName: {}, byTla: {} }) {
+  const homeTeam = { ...m.homeTeam, flag: resolveFlag(m.homeTeam, registry), shortName: m.homeTeam?.tla || m.homeTeam?.name || '???' }
+  const awayTeam = { ...m.awayTeam, flag: resolveFlag(m.awayTeam, registry), shortName: m.awayTeam?.tla || m.awayTeam?.name || '???' }
 
   if (!m.utcDate) {
     // Pas de date API : on conserve date/time existants si présents, sinon placeholder
@@ -96,7 +125,8 @@ export function AppProvider({ children }) {
     const matchesRef = ref(db, 'matches')
     const unsub = onValue(matchesRef, (snap) => {
       const data = snap.val() || {}
-      const arr = Object.values(data).map(normalizeMatch)
+      const flagRegistry = buildFlagRegistry(data)
+      const arr = Object.values(data).map((m) => normalizeMatch(m, flagRegistry))
       setMatches(arr)
 
       const res = {}
