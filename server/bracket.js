@@ -36,16 +36,16 @@ const BRACKET = {
   // ── Huitièmes → Quarts ──
   m089: { next: 'm097', side: 'home' },  // GAUCHE haut
   m090: { next: 'm097', side: 'away' },
-  m093: { next: 'm099', side: 'home' },  // GAUCHE bas
-  m094: { next: 'm099', side: 'away' },
-  m091: { next: 'm098', side: 'home' },  // DROITE haut
-  m092: { next: 'm098', side: 'away' },
+  m093: { next: 'm098', side: 'home' },  // GAUCHE bas → quart m098 (537384)
+  m094: { next: 'm098', side: 'away' },
+  m091: { next: 'm099', side: 'home' },  // DROITE haut → quart m099 (537385)
+  m092: { next: 'm099', side: 'away' },
   m095: { next: 'm100', side: 'home' },  // DROITE bas
   m096: { next: 'm100', side: 'away' },
   // ── Quarts → Demies ──
-  m097: { next: 'm101', side: 'home' },  // m101 = demie GAUCHE
-  m099: { next: 'm101', side: 'away' },
-  m098: { next: 'm102', side: 'home' },  // m102 = demie DROITE
+  m097: { next: 'm101', side: 'home' },  // m101 = demie GAUCHE (m097 + m098)
+  m098: { next: 'm101', side: 'away' },
+  m099: { next: 'm102', side: 'home' },  // m102 = demie DROITE (m099 + m100)
   m100: { next: 'm102', side: 'away' },
   // ── Demies → Finale + 3e place ──
   m101: { next: 'm104', side: 'home', loserNext: 'm103', loserSide: 'home' },
